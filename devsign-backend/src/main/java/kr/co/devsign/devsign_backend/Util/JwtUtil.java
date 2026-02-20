@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.JwtException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -86,5 +87,17 @@ public class JwtUtil {
         } catch (JwtException | IllegalArgumentException e) {
             return true;
         }
+    }
+
+    // HttpServletRequest에서 loginId 추출 (컨트롤러 편의 메서드)
+    public String getLoginIdFromRequest(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            if (validateToken(token)) {
+                return getLoginIdFromToken(token);
+            }
+        }
+        return null;
     }
 }

@@ -187,7 +187,7 @@ function App() {
   const handleToggleLike = async (postId: number) => {
     if (!isLoggedIn) { alert("로그인이 필요한 서비스입니다."); return; }
     try {
-      const response = await axios.post(`http://localhost:8080/api/posts/${postId}/like?loginId=${currentUser?.loginId}`);
+      const response = await axios.post(`http://localhost:8080/api/posts/${postId}/like`);
       setPosts(prev => prev.map(p => p.id === postId ? response.data : p));
     } catch (e) { console.error("좋아요 처리 실패", e); }
   };
@@ -196,8 +196,7 @@ function App() {
     if (!isLoggedIn) { alert("로그인이 필요합니다."); return; }
     try {
       const response = await axios.post(`http://localhost:8080/api/posts/${postId}/comments`, {
-        content: content,
-        loginId: currentUser?.loginId
+        content: content
       });
       setPosts(prev => prev.map(p => p.id === postId ? response.data : p));
     } catch (e) { console.error("댓글 등록 실패", e); }
@@ -208,7 +207,6 @@ function App() {
     try {
       const response = await axios.post(`http://localhost:8080/api/posts/${postId}/comments`, {
         content: content,
-        loginId: currentUser?.loginId,
         parentId: commentId
       });
       setPosts(prev => prev.map(p => p.id === postId ? response.data : p));
@@ -218,7 +216,7 @@ function App() {
   const handleToggleCommentLike = async (postId: number, commentId: number) => {
     if (!isLoggedIn) { alert("로그인이 필요합니다."); return; }
     try {
-      const response = await axios.post(`http://localhost:8080/api/posts/${postId}/comments/${commentId}/like?loginId=${currentUser?.loginId}`);
+      const response = await axios.post(`http://localhost:8080/api/posts/${postId}/comments/${commentId}/like`);
       setPosts(prev => prev.map(p => p.id === postId ? response.data : p));
     } catch (e) { console.error("댓글 좋아요 실패", e); }
   };
@@ -226,7 +224,7 @@ function App() {
   const handleDeleteComment = async (postId: number, commentId: number) => {
     if (!window.confirm("댓글을 삭제하시겠습니까?")) return;
     try {
-      const response = await axios.delete(`http://localhost:8080/api/posts/${postId}/comments/${commentId}?loginId=${currentUser?.loginId}`);
+      const response = await axios.delete(`http://localhost:8080/api/posts/${postId}/comments/${commentId}`);
       setPosts(prev => prev.map(p => p.id === postId ? response.data : p));
     } catch (e) { console.error("댓글 삭제 실패", e); }
   };
@@ -234,7 +232,7 @@ function App() {
   const handleDeletePost = async (id: number) => {
     if (window.confirm("이 게시물을 정말로 삭제하시겠습니까?")) {
       try {
-        await axios.delete(`http://localhost:8080/api/posts/${id}?loginId=${currentUser?.loginId}`);
+        await axios.delete(`http://localhost:8080/api/posts/${id}`);
         setPosts(prev => prev.filter(p => p.id !== id));
         alert("게시물이 삭제되었습니다.");
         handleNavigate("board-page");
@@ -248,7 +246,7 @@ function App() {
     if (!isAdmin || !isLoggedIn) return;
     if (window.confirm("이 공지사항을 삭제하시겠습니까?")) {
       try {
-        await axios.delete(`http://localhost:8080/api/notices/${id}?loginId=${currentUser?.loginId}`);
+        await axios.delete(`http://localhost:8080/api/notices/${id}`);
         setNotices(prev => prev.filter(n => n.id !== id));
         handleNavigate("notice-page");
         alert("공지사항이 성공적으로 삭제되었습니다. ✨");
@@ -262,7 +260,7 @@ function App() {
     if (!isAdmin || !isLoggedIn) return;
     if (window.confirm("이 행사 기록을 삭제하시겠습니까?")) {
       try {
-        await axios.delete(`http://localhost:8080/api/events/${id}?loginId=${currentUser?.loginId}`);
+        await axios.delete(`http://localhost:8080/api/events/${id}`);
         setEvents(prev => prev.filter(e => e.id !== id));
         handleNavigate("event-page");
         alert("행사가 삭제되었습니다.");

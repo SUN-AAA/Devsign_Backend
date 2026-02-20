@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  X, ChevronLeft, PencilLine, AlertCircle, 
-  ImagePlus, Trash2, Wallet, Hash 
+import {
+  X, ChevronLeft, PencilLine, AlertCircle,
+  ImagePlus, Trash2, Wallet, Hash
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import axios from "axios";
@@ -53,11 +53,6 @@ export const BoardWrite = ({ onNavigate, isAdmin, user, fetchPosts, post }: any)
       return;
     }
 
-    if (!user?.loginId) {
-      alert("로그인 정보가 없습니다. 다시 로그인해주세요.");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -65,8 +60,7 @@ export const BoardWrite = ({ onNavigate, isAdmin, user, fetchPosts, post }: any)
         title,
         content,
         category,
-        images,
-        loginId: user.loginId // 작성자 식별을 위해 전달
+        images
       };
 
       if (post) {
@@ -93,10 +87,10 @@ export const BoardWrite = ({ onNavigate, isAdmin, user, fetchPosts, post }: any)
   return (
     <div className="min-h-screen bg-slate-50 pt-32 pb-20 font-sans">
       <div className="max-w-4xl mx-auto px-6">
-        
+
         <div className="flex items-center justify-between mb-12">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => onNavigate("board-page")}
               className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-400 border border-slate-100 shadow-sm transition-all"
             >
@@ -114,11 +108,11 @@ export const BoardWrite = ({ onNavigate, isAdmin, user, fetchPosts, post }: any)
               </h1>
             </div>
           </div>
-          
+
           <div className="flex gap-3">
             <Button variant="ghost" onClick={() => onNavigate("board-page")} className="px-8 py-6 rounded-2xl font-black text-slate-400">취소</Button>
-            <Button 
-              onClick={handleSubmit} 
+            <Button
+              onClick={handleSubmit}
               disabled={isSubmitting}
               className="bg-indigo-600 text-white px-10 py-6 rounded-2xl font-black shadow-xl disabled:bg-slate-300 transition-all active:scale-95"
             >
@@ -129,7 +123,7 @@ export const BoardWrite = ({ onNavigate, isAdmin, user, fetchPosts, post }: any)
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[3rem] p-10 md:p-14 shadow-sm border border-slate-100">
           <form className="space-y-10" onSubmit={handleSubmit}>
-            
+
             <div className="space-y-4">
               <label className="text-xs font-black text-slate-400 uppercase ml-1 tracking-widest flex items-center gap-2">
                 <AlertCircle size={14} /> 카테고리
@@ -140,11 +134,10 @@ export const BoardWrite = ({ onNavigate, isAdmin, user, fetchPosts, post }: any)
                     key={cat}
                     type="button"
                     onClick={() => setCategory(cat)}
-                    className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-black transition-all text-sm border ${
-                      category === cat 
-                        ? (cat === "회비" ? "bg-amber-600 border-amber-600 text-white shadow-lg" : "bg-slate-900 border-slate-900 text-white shadow-lg") 
+                    className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-black transition-all text-sm border ${category === cat
+                        ? (cat === "회비" ? "bg-amber-600 border-amber-600 text-white shadow-lg" : "bg-slate-900 border-slate-900 text-white shadow-lg")
                         : "bg-white border-slate-100 text-slate-400"
-                    }`}
+                      }`}
                   >
                     {cat === "회비" ? <Wallet size={16} /> : <Hash size={16} />}
                     {cat}
@@ -155,8 +148,8 @@ export const BoardWrite = ({ onNavigate, isAdmin, user, fetchPosts, post }: any)
 
             <div className="space-y-4">
               <label className="text-xs font-black text-slate-400 uppercase ml-1 tracking-widest">글 제목</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="제목을 입력해주세요"
@@ -166,7 +159,7 @@ export const BoardWrite = ({ onNavigate, isAdmin, user, fetchPosts, post }: any)
 
             <div className="space-y-4">
               <label className="text-xs font-black text-slate-400 uppercase ml-1 tracking-widest">상세 내용</label>
-              <textarea 
+              <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="내용을 입력해주세요."
@@ -181,7 +174,7 @@ export const BoardWrite = ({ onNavigate, isAdmin, user, fetchPosts, post }: any)
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
                 <AnimatePresence>
                   {images.map((img, index) => (
-                    <motion.div 
+                    <motion.div
                       key={index}
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -189,7 +182,7 @@ export const BoardWrite = ({ onNavigate, isAdmin, user, fetchPosts, post }: any)
                       className="relative aspect-square rounded-[1.5rem] overflow-hidden border border-slate-100 group shadow-sm"
                     >
                       <img src={img} alt="preview" className="w-full h-full object-cover" />
-                      <button 
+                      <button
                         type="button"
                         onClick={() => removeImage(index)}
                         className="absolute inset-0 bg-black/40 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
@@ -199,7 +192,7 @@ export const BoardWrite = ({ onNavigate, isAdmin, user, fetchPosts, post }: any)
                     </motion.div>
                   ))}
                 </AnimatePresence>
-                <button 
+                <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="aspect-square rounded-[1.5rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 hover:border-indigo-300 hover:text-indigo-400 hover:bg-indigo-50/30 transition-all group"

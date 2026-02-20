@@ -26,9 +26,7 @@ public class EventService {
         return eventRepository.findAll();
     }
 
-    public Event createEvent(Map<String, Object> payload, String ip) {
-        String loginId = (String) payload.get("loginId");
-
+    public Event createEvent(Map<String, Object> payload, String loginId, String ip) {
         Event event = new Event();
         event.setCategory((String) payload.get("category"));
         event.setTitle((String) payload.get("title"));
@@ -44,7 +42,7 @@ public class EventService {
         return saved;
     }
 
-    public Event updateEvent(Long id, Map<String, Object> payload, String ip) {
+    public Event updateEvent(Long id, Map<String, Object> payload, String loginId, String ip) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("행사를 찾을 수 없습니다."));
 
@@ -55,9 +53,7 @@ public class EventService {
         event.setContent((String) payload.get("content"));
         event.setImage((String) payload.get("image"));
 
-        String loginId = (String) payload.get("loginId");
         accessLogService.logByLoginId(loginId, "EVENT_UPDATE", ip);
-
         return eventRepository.save(event);
     }
 
@@ -98,7 +94,7 @@ public class EventService {
 
         if (loginId == null || loginId.isBlank()) {
             response.put("status", "error");
-            response.put("message", "로그인 ID가 전달되지 않았습니다.");
+            response.put("message", "로그인이 필요합니다.");
             return response;
         }
 

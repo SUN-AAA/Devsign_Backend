@@ -35,8 +35,7 @@ public class BoardService {
         return postRepository.findAllByOrderByIdDesc();
     }
 
-    public Post createPost(Map<String, Object> payload, String ip) {
-        String loginId = (String) payload.get("loginId");
+    public Post createPost(Map<String, Object> payload, String loginId, String ip) {
         Member member = memberRepository.findByLoginId(loginId).orElseThrow();
 
         Post post = new Post();
@@ -63,7 +62,7 @@ public class BoardService {
     @Transactional
     public Post getPostDetail(Long id, String loginId) {
         Post post = postRepository.findById(id).orElseThrow();
-        Member member = memberRepository.findByLoginId(loginId).orElse(null);
+        Member member = memberRepository.findByLoginId(loginId != null ? loginId : "").orElse(null);
 
         if (member != null) {
             if (!postViewRepository.existsByMemberAndPost(member, post)) {
@@ -80,7 +79,7 @@ public class BoardService {
         return post;
     }
 
-    public Post updatePost(Long id, Map<String, Object> payload, String ip) {
+    public Post updatePost(Long id, Map<String, Object> payload, String loginId, String ip) {
         Post post = postRepository.findById(id).orElseThrow();
         post.setTitle((String) payload.get("title"));
         post.setContent((String) payload.get("content"));
@@ -91,7 +90,7 @@ public class BoardService {
             post.setImages((List<String>) imagesObj);
         }
 
-        accessLogService.logByLoginId((String) payload.get("loginId"), "POST_UPDATE", ip);
+        accessLogService.logByLoginId(loginId, "POST_UPDATE", ip);
         return postRepository.save(post);
     }
 
@@ -143,9 +142,8 @@ public class BoardService {
     }
 
     @Transactional
-    public Post addComment(Long postId, Map<String, String> payload, String ip) {
+    public Post addComment(Long postId, Map<String, String> payload, String loginId, String ip) {
         Post post = postRepository.findById(postId).orElseThrow();
-        String loginId = payload.get("loginId");
         String parentId = payload.get("parentId");
         Member member = memberRepository.findByLoginId(loginId).orElseThrow();
 

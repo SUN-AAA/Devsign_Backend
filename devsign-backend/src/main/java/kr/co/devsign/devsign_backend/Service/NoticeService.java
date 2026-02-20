@@ -57,9 +57,7 @@ public class NoticeService {
         return response;
     }
 
-    public Notice createNotice(Map<String, Object> payload, String ip) {
-        String loginId = (String) payload.get("loginId");
-
+    public Notice createNotice(Map<String, Object> payload, String loginId, String ip) {
         Notice notice = new Notice();
         notice.setTitle((String) payload.get("title"));
         notice.setContent((String) payload.get("content"));
@@ -85,7 +83,7 @@ public class NoticeService {
         return saved;
     }
 
-    public Notice updateNotice(Long id, Map<String, Object> payload, String ip) {
+    public Notice updateNotice(Long id, Map<String, Object> payload, String loginId, String ip) {
         Notice notice = noticeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("공지사항을 찾을 수 없습니다."));
 
@@ -99,9 +97,7 @@ public class NoticeService {
         notice.setImages((List<String>) payload.get("images"));
         notice.setImportant(payload.get("important") != null && (Boolean) payload.get("important"));
 
-        String loginId = (String) payload.get("loginId");
         accessLogService.logByLoginId(loginId, "NOTICE_UPDATE", ip);
-
         return noticeRepository.save(notice);
     }
 
@@ -109,18 +105,20 @@ public class NoticeService {
         Notice notice = noticeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("공지사항을 찾을 수 없습니다."));
 
-        Optional<Member> memberOpt = memberRepository.findByLoginId(loginId);
-        if (memberOpt.isPresent()) {
-            Member member = memberOpt.get();
+        if (loginId != null) {
+            Optional<Member> memberOpt = memberRepository.findByLoginId(loginId);
+            if (memberOpt.isPresent()) {
+                Member member = memberOpt.get();
 
-            if (!noticeViewRepository.existsByMemberAndNotice(member, notice)) {
-                notice.setViews(notice.getViews() + 1);
-                noticeRepository.save(notice);
+                if (!noticeViewRepository.existsByMemberAndNotice(member, notice)) {
+                    notice.setViews(notice.getViews() + 1);
+                    noticeRepository.save(notice);
 
-                NoticeView view = new NoticeView();
-                view.setMember(member);
-                view.setNotice(notice);
-                noticeViewRepository.save(view);
+                    NoticeView view = new NoticeView();
+                    view.setMember(member);
+                    view.setNotice(notice);
+                    noticeViewRepository.save(view);
+                }
             }
         }
 

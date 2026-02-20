@@ -17,16 +17,13 @@ export const EventPage = ({ onNavigate, isAdmin, isLoggedIn, events, user, setEv
     }
 
     try {
-      // 백엔드 EventController의 toggleLike API 호출
-      const response = await axios.post(`http://localhost:8080/api/events/${eventId}/like`, {
-        loginId: user.loginId // 현재 로그인한 사용자 ID 전송
-      });
+      const response = await axios.post(`http://localhost:8080/api/events/${eventId}/like`);
 
       if (response.data.status === "success") {
         // ✨ 성공 시, 상위 컴포넌트의 events 상태를 업데이트하여 화면에 즉시 반영
-        const updatedEvents = events.map((event: any) => 
-          event.id === eventId 
-            ? { ...event, likes: response.data.likeCount } 
+        const updatedEvents = events.map((event: any) =>
+          event.id === eventId
+            ? { ...event, likes: response.data.likeCount }
             : event
         );
         setEvents(updatedEvents);
@@ -47,10 +44,10 @@ export const EventPage = ({ onNavigate, isAdmin, isLoggedIn, events, user, setEv
             </h1>
             <p className="text-slate-500 font-medium mt-2">DEVSIGN의 역동적인 활동 기록입니다.</p>
           </div>
-          
+
           {isLoggedIn && isAdmin && (
-            <Button 
-              onClick={() => onNavigate("event-write")} 
+            <Button
+              onClick={() => onNavigate("event-write")}
               className="bg-indigo-600 text-white font-bold px-8 py-6 rounded-2xl shadow-lg flex items-center gap-2 transition-all active:scale-95"
             >
               <Plus size={20} /> 행사 등록
@@ -90,13 +87,13 @@ export const EventPage = ({ onNavigate, isAdmin, isLoggedIn, events, user, setEv
                   <div className="flex items-center gap-1.5 text-slate-300 font-bold text-[11px]">
                     <Eye size={14} /> {event.views || 0}
                   </div>
-                  
+
                   {/* ✨ 좋아요 버튼: 하트 색상을 조회수와 동일하게 회색으로 유지 */}
-                  <button 
+                  <button
                     onClick={(e) => handleLike(e, event.id)}
                     className="flex items-center gap-1.5 text-slate-300 font-bold text-[11px] hover:text-pink-500 transition-colors"
                   >
-                    <Heart size={14} /> 
+                    <Heart size={14} />
                     {event.likes || 0}
                   </button>
                 </div>

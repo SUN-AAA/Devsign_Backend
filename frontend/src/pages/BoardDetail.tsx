@@ -1,20 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ArrowLeft, Eye, MessageSquare, Heart, 
+import {
+  ArrowLeft, Eye, MessageSquare, Heart,
   User, Send, Wallet, Trash2, Edit3, Trash, ChevronDown
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import axios from "axios";
 
-export const BoardDetail = ({ 
-  onNavigate, 
-  post, 
-  isAdmin, 
-  isLoggedIn, 
+export const BoardDetail = ({
+  onNavigate,
+  post,
+  isAdmin,
+  isLoggedIn,
   user,
   setPost,
-  onDelete, 
+  onDelete,
   onToggleLike,
   onAddComment,
   onDeleteComment,
@@ -35,10 +35,10 @@ export const BoardDetail = ({
   }, [post?.commentsList?.length]);
 
   useEffect(() => {
-    if (isLoggedIn && user?.loginId && post?.id) {
+    if (isLoggedIn && post?.id) {
       const updatePostView = async () => {
         try {
-          const response = await axios.get(`http://localhost:8080/api/posts/${post.id}?loginId=${user.loginId}`);
+          const response = await axios.get(`http://localhost:8080/api/posts/${post.id}`);
           if (response.data) {
             setPost(response.data);
           }
@@ -48,7 +48,7 @@ export const BoardDetail = ({
       };
       updatePostView();
     }
-  }, [post?.id, isLoggedIn, user?.loginId]);
+  }, [post?.id, isLoggedIn]);
 
   if (!post) return <div className="pt-40 text-center text-slate-400 font-bold">게시글을 찾을 수 없습니다.</div>;
 
@@ -75,27 +75,26 @@ export const BoardDetail = ({
   return (
     <div className="min-h-screen bg-slate-50 pt-32 pb-20 font-sans">
       <div className="max-w-4xl mx-auto px-6">
-        
-        <button 
+
+        <button
           onClick={() => onNavigate("board-page")}
           className="flex items-center gap-2 text-slate-400 font-black mb-8 hover:text-indigo-600 transition-colors group"
         >
-          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> 
+          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
           목록으로 돌아가기
         </button>
 
-        <motion.article 
+        <motion.article
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-[3rem] p-10 md:p-16 shadow-sm border border-slate-100 mb-8 overflow-hidden"
         >
           <header className="mb-10 border-b border-slate-50 pb-10">
             <div className="flex items-center gap-3 mb-6">
-              <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border ${
-                post.category === "회비" 
-                  ? "bg-amber-50 text-amber-600 border-amber-100" 
+              <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border ${post.category === "회비"
+                  ? "bg-amber-50 text-amber-600 border-amber-100"
                   : "bg-indigo-50 text-indigo-600 border border-indigo-100"
-              }`}>
+                }`}>
                 {post.category === "회비" && <Wallet size={10} className="inline mr-1 mb-0.5" />}
                 {post.category}
               </span>
@@ -144,7 +143,7 @@ export const BoardDetail = ({
             {post.images && post.images.length > 0 && (
               <div className="mt-12 flex flex-col gap-8">
                 {post.images.map((img: string, idx: number) => (
-                  <motion.div 
+                  <motion.div
                     key={idx}
                     className="rounded-[2.5rem] overflow-hidden shadow-xl shadow-slate-200/50 border border-slate-100"
                   >
@@ -156,28 +155,27 @@ export const BoardDetail = ({
           </div>
 
           <div className="flex items-center gap-4 pt-10 border-t border-slate-50">
-            <Button 
+            <Button
               onClick={() => onToggleLike(post.id)}
-              className={`rounded-2xl px-8 py-7 font-black transition-all flex items-center gap-2 shadow-none border-none active:scale-95 ${
-                post.likedByMe ? "bg-pink-50 text-pink-500" : "bg-slate-50 text-slate-400"
-              }`}
+              className={`rounded-2xl px-8 py-7 font-black transition-all flex items-center gap-2 shadow-none border-none active:scale-95 ${post.likedByMe ? "bg-pink-50 text-pink-500" : "bg-slate-50 text-slate-400"
+                }`}
             >
               <Heart size={20} fill={post.likedByMe ? "currentColor" : "none"} />
               좋아요 {post.likes || 0}
             </Button>
-            
+
             <div className="ml-auto flex gap-3">
               {canEdit && (
-                <Button 
+                <Button
                   onClick={() => onNavigate("board-write", post.id)}
                   className="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white font-black rounded-xl px-6 flex items-center gap-2 transition-all shadow-none border-none"
                 >
                   <Edit3 size={18} /> 수정
                 </Button>
               )}
-              
+
               {canDelete && (
-                <Button 
+                <Button
                   onClick={() => onDelete(post.id)}
                   className="bg-red-50 text-red-500 hover:bg-red-600 hover:text-white font-black rounded-xl px-6 flex items-center gap-2 transition-all shadow-none border-none"
                 >
@@ -196,14 +194,14 @@ export const BoardDetail = ({
 
           {isLoggedIn ? (
             <div className="relative mb-12 group">
-              <textarea 
+              <textarea
                 value={commentContent}
                 onChange={(e) => setCommentContent(e.target.value)}
                 placeholder="따뜻한 댓글 한마디를 남겨주세요."
                 className="w-full p-6 bg-slate-50 rounded-[2rem] border-none outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 min-h-[120px] transition-all"
               />
-              <button 
-                onClick={handleSendComment} 
+              <button
+                onClick={handleSendComment}
                 className="absolute bottom-4 right-4 p-4 bg-indigo-600 text-white rounded-2xl shadow-lg hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all disabled:bg-slate-200"
                 disabled={!commentContent.trim()}
               >
@@ -222,24 +220,24 @@ export const BoardDetail = ({
               post.commentsList
                 .filter((c: any) => !c.reply)
                 .map((c: any) => (
-                <CommentItem 
-                  key={c.id} 
-                  comment={c} 
-                  postId={post.id}
-                  isLoggedIn={isLoggedIn}
-                  currentUser={user}
-                  isAdmin={isAdmin}
-                  onDelete={() => onDeleteComment(post.id, c.id)}
-                  onToggleCommentLike={(commentId: number) => onToggleCommentLike(post.id, commentId)}
-                  onAddReply={(content: string) => onAddReply(post.id, c.id, content)}
-                  onDeleteReply={(replyId: number) => onDeleteComment(post.id, replyId)}
-                  formatStudentId={formatStudentId}
-                />
-              ))
+                  <CommentItem
+                    key={c.id}
+                    comment={c}
+                    postId={post.id}
+                    isLoggedIn={isLoggedIn}
+                    currentUser={user}
+                    isAdmin={isAdmin}
+                    onDelete={() => onDeleteComment(post.id, c.id)}
+                    onToggleCommentLike={(commentId: number) => onToggleCommentLike(post.id, commentId)}
+                    onAddReply={(content: string) => onAddReply(post.id, c.id, content)}
+                    onDeleteReply={(replyId: number) => onDeleteComment(post.id, replyId)}
+                    formatStudentId={formatStudentId}
+                  />
+                ))
             ) : (
               <p className="text-center py-10 text-slate-300 font-bold text-sm uppercase tracking-widest">첫 번째 댓글을 남겨보세요.</p>
             )}
-            
+
             <div ref={commentsEndRef} className="h-2" />
           </div>
         </section>
@@ -248,17 +246,17 @@ export const BoardDetail = ({
   );
 };
 
-const CommentItem = ({ 
-  comment, 
+const CommentItem = ({
+  comment,
   postId,
-  isAdmin, 
-  currentUser, 
-  onDelete, 
-  onToggleCommentLike, 
-  onAddReply, 
+  isAdmin,
+  currentUser,
+  onDelete,
+  onToggleCommentLike,
+  onAddReply,
   onDeleteReply,
   formatStudentId,
-  isLoggedIn 
+  isLoggedIn
 }: any) => {
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyContent, setReplyContent] = useState("");
@@ -298,7 +296,7 @@ const CommentItem = ({
               <span className="text-[10px] font-bold text-slate-300 uppercase">{comment.date}</span>
             </div>
             {canDelete(comment) && (
-              <button 
+              <button
                 onClick={onDelete}
                 className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover/comment:opacity-100"
               >
@@ -309,16 +307,15 @@ const CommentItem = ({
           <p className="text-slate-600 font-medium text-sm leading-relaxed mb-3">{comment.content}</p>
 
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => onToggleCommentLike(comment.id)}
-              className={`flex items-center gap-1 text-[11px] font-black transition-colors ${
-                comment.likedByMe ? "text-pink-500" : "text-slate-400 hover:text-pink-500"
-              }`}
+              className={`flex items-center gap-1 text-[11px] font-black transition-colors ${comment.likedByMe ? "text-pink-500" : "text-slate-400 hover:text-pink-500"
+                }`}
             >
               <Heart size={12} fill={comment.likedByMe ? "currentColor" : "none"} />
               좋아요 {comment.likes || 0}
             </button>
-            <button 
+            <button
               onClick={() => setShowReplyInput(!showReplyInput)}
               className="text-[11px] font-black text-slate-400 hover:text-indigo-600 transition-colors"
             >
@@ -328,7 +325,7 @@ const CommentItem = ({
 
           <div className="mt-6 ml-4 border-l-2 border-slate-100 pl-6 space-y-6">
             {hasMoreReplies && (
-              <button 
+              <button
                 onClick={() => setShowAllReplies(true)}
                 className="flex items-center gap-2 text-[11px] font-bold text-slate-400 hover:text-indigo-500 transition-colors py-1"
               >
@@ -339,7 +336,7 @@ const CommentItem = ({
 
             <AnimatePresence>
               {visibleReplies.map((reply: any) => (
-                <motion.div 
+                <motion.div
                   key={reply.id}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -362,20 +359,19 @@ const CommentItem = ({
                           </span>
                           <span className="text-[9px] font-bold text-slate-300">{reply.date}</span>
                         </div>
-                        
+
                         <div className="flex items-center gap-3">
-                          <button 
+                          <button
                             onClick={(e) => { e.stopPropagation(); onToggleCommentLike(reply.id); }}
-                            className={`flex items-center gap-1 transition-colors ${
-                              reply.likedByMe ? "text-pink-500" : "text-slate-300 hover:text-pink-500"
-                            }`}
+                            className={`flex items-center gap-1 transition-colors ${reply.likedByMe ? "text-pink-500" : "text-slate-300 hover:text-pink-500"
+                              }`}
                           >
                             <Heart size={12} fill={reply.likedByMe ? "currentColor" : "none"} />
                             <span className="text-[10px] font-bold">{reply.likes || 0}</span>
                           </button>
-                          
+
                           {canDelete(reply) && (
-                            <button 
+                            <button
                               onClick={() => onDeleteReply(reply.id)}
                               className="text-slate-200 hover:text-red-500 transition-colors opacity-0 group-hover/reply:opacity-100"
                             >
@@ -393,7 +389,7 @@ const CommentItem = ({
 
             {showReplyInput && isLoggedIn && (
               <div className="flex gap-2 mt-4">
-                <input 
+                <input
                   autoFocus
                   value={replyContent}
                   onChange={(e) => setReplyContent(e.target.value)}
@@ -406,7 +402,7 @@ const CommentItem = ({
                     }
                   }}
                 />
-                <button 
+                <button
                   onClick={handleReplySubmit}
                   disabled={!replyContent.trim()}
                   className="p-2 bg-indigo-600 text-white rounded-xl shadow-sm hover:bg-indigo-700 disabled:bg-slate-200 transition-all"

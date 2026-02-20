@@ -3,6 +3,7 @@ package kr.co.devsign.devsign_backend.Controller;
 import jakarta.servlet.http.HttpServletRequest;
 import kr.co.devsign.devsign_backend.Entity.Event;
 import kr.co.devsign.devsign_backend.Service.EventService;
+import kr.co.devsign.devsign_backend.Util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +17,7 @@ import java.util.Map;
 public class EventController {
 
     private final EventService eventService;
+    private final JwtUtil jwtUtil;
 
     @GetMapping
     public List<Event> getAllEvents() {
@@ -24,38 +26,41 @@ public class EventController {
 
     @PostMapping
     public Event createEvent(@RequestBody Map<String, Object> payload, HttpServletRequest request) {
-        return eventService.createEvent(payload, request.getRemoteAddr());
+        String loginId = jwtUtil.getLoginIdFromRequest(request);
+        return eventService.createEvent(payload, loginId, request.getRemoteAddr());
     }
 
     @PutMapping("/{id}")
     public Event updateEvent(@PathVariable Long id, @RequestBody Map<String, Object> payload, HttpServletRequest request) {
-        return eventService.updateEvent(id, payload, request.getRemoteAddr());
+        String loginId = jwtUtil.getLoginIdFromRequest(request);
+        return eventService.updateEvent(id, payload, loginId, request.getRemoteAddr());
     }
 
     @GetMapping("/{id}")
     public Map<String, Object> getEventDetail(
             @PathVariable Long id,
-            @RequestParam(required = false) String loginId
+            HttpServletRequest request
     ) {
+        // 비로그인 사용자도 조회 가능 (null 허용)
+        String loginId = jwtUtil.getLoginIdFromRequest(request);
         return eventService.getEventDetail(id, loginId);
     }
 
     @PostMapping("/{id}/like")
     public Map<String, Object> toggleLike(
             @PathVariable Long id,
-            @RequestBody Map<String, String> requestData
+            HttpServletRequest request
     ) {
-        // 기존 프론트 연동 그대로: body에서 loginId 받음
-        String loginId = requestData.get("loginId");
+        String loginId = jwtUtil.getLoginIdFromRequest(request);
         return eventService.toggleLike(id, loginId);
     }
 
     @DeleteMapping("/{id}")
     public Map<String, String> deleteEvent(
             @PathVariable Long id,
-            @RequestParam String loginId,
             HttpServletRequest request
     ) {
+        String loginId = jwtUtil.getLoginIdFromRequest(request);
         return eventService.deleteEvent(id, loginId, request.getRemoteAddr());
     }
 }

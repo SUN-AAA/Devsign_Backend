@@ -6,16 +6,14 @@ import axios from "axios";
 
 // ✨ props에 isLoggedIn, user, setNotice를 추가하여 상위 상태와 연동합니다.
 export const NoticeDetail = ({ onNavigate, isAdmin, isLoggedIn, notice, onDelete, user, setNotice }: any) => {
-  
+
   // ✨ [조회수 업데이트 로직] 상세 페이지 진입 시 백엔드에 조회수 증가 요청
   useEffect(() => {
-    if (isLoggedIn && user?.loginId && notice?.id) {
+    if (isLoggedIn && notice?.id) {
       const updateNoticeView = async () => {
         try {
-          // 백엔드 엔드포인트에 loginId를 전달하여 중복 조회수 체크를 수행합니다.
-          const response = await axios.get(`http://localhost:8080/api/notices/${notice.id}?loginId=${user.loginId}`);
+          const response = await axios.get(`http://localhost:8080/api/notices/${notice.id}`);
           if (response.data) {
-            // 서버에서 반환된 최신 데이터(증가된 조회수 포함)를 상위 상태에 반영
             setNotice(response.data);
           }
         } catch (error) {
@@ -24,19 +22,19 @@ export const NoticeDetail = ({ onNavigate, isAdmin, isLoggedIn, notice, onDelete
       };
       updateNoticeView();
     }
-  }, [notice?.id, isLoggedIn, user?.loginId, setNotice]);
+  }, [notice?.id, isLoggedIn, setNotice]);
 
   if (!notice) return <div className="pt-40 text-center font-bold text-slate-400">공지사항을 찾을 수 없습니다.</div>;
 
   return (
     <div className="min-h-screen bg-white pb-20 pt-32 font-sans">
       <div className="max-w-4xl mx-auto px-6">
-        
+
         <div className="flex justify-between items-center mb-8">
           <button onClick={() => onNavigate("notice-page")} className="flex items-center text-slate-400 font-bold text-sm hover:text-indigo-600 transition-colors group">
             <ArrowLeft size={18} className="mr-2 group-hover:-translate-x-1 transition-transform" /> 목록으로 돌아가기
           </button>
-          
+
           <div className="flex items-center gap-6">
             {/* ✨ 조회수 표시 (Eye 아이콘) 추가 */}
             <div className="flex items-center gap-1.5 text-slate-300 font-bold text-xs">
@@ -46,16 +44,16 @@ export const NoticeDetail = ({ onNavigate, isAdmin, isLoggedIn, notice, onDelete
             {/* 관리자 전용 액션 버튼: 로그인 상태와 관리자 여부 동시 확인 */}
             {isAdmin && isLoggedIn && (
               <div className="flex gap-2 border-l border-slate-100 pl-4">
-                <Button 
-                  onClick={() => onNavigate("notice-write", notice.id)} 
-                  variant="ghost" 
+                <Button
+                  onClick={() => onNavigate("notice-write", notice.id)}
+                  variant="ghost"
                   className="text-indigo-600 font-bold rounded-xl hover:bg-indigo-50 flex items-center gap-2"
                 >
                   <Edit3 size={18} /> 수정
                 </Button>
-                <Button 
-                  onClick={() => onDelete(notice.id)} 
-                  variant="ghost" 
+                <Button
+                  onClick={() => onDelete(notice.id)}
+                  variant="ghost"
                   className="text-pink-600 font-bold rounded-xl hover:bg-pink-50 flex items-center gap-2"
                 >
                   <Trash2 size={18} /> 삭제
@@ -74,7 +72,7 @@ export const NoticeDetail = ({ onNavigate, isAdmin, isLoggedIn, notice, onDelete
           <div className="flex items-center gap-6 text-slate-400 font-medium text-sm border-y border-slate-50 py-6">
             {/* ✨ 작성자 이름: notice.author를 통해 실제 이름을 표시 */}
             <div className="flex items-center gap-2">
-              <User size={16} className="text-indigo-400" /> 
+              <User size={16} className="text-indigo-400" />
               <span className="text-slate-600 font-bold">{notice.author || "관리자"}</span>
             </div>
             <div className="flex items-center gap-2"><Calendar size={16} /> <span>{notice.date}</span></div>
@@ -91,7 +89,7 @@ export const NoticeDetail = ({ onNavigate, isAdmin, isLoggedIn, notice, onDelete
           {notice.images && notice.images.length > 0 && (
             <div className="flex flex-col gap-8">
               {notice.images.map((img: string, idx: number) => (
-                <motion.div 
+                <motion.div
                   key={idx}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
