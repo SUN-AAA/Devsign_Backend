@@ -1,43 +1,41 @@
-import { useState, useEffect, useMemo } from "react";
-import axios from "axios";
-import { AnimatePresence, motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, useNavigate, Navigate, useLocation } from "react-router-dom";
+import { api } from "./api/axios";
+
+// Layout
 import { Navbar } from "./components/layout/Navbar";
 import { Footer } from "./components/layout/Footer";
-import { Hero } from "./sections/Hero";
-import { About } from "./sections/About";
-import { Notice } from "./sections/Notice";
-import { Events } from "./sections/Events";
-import { FAQ } from "./sections/FAQ";
-import { Board } from "./sections/Board"; // ✨ 추가: 분리된 Board 섹션 임포트
 
-// 모든 페이지 임포트
-import { Login } from "./pages/Login";
-import { Signup } from "./pages/Signup";
-import { FindAccount } from "./pages/FindAccount";
-import { SignupSuccess } from "./pages/SignupSuccess";
-import { ContactAdmin } from "./pages/ContactAdmin";
-import { ProfilePage } from "./pages/ProfilePage";
+// Pages
+import { Home } from "./pages/home/Home";
+import { Login } from "./pages/auth/Login";
+import { Signup } from "./pages/auth/Signup";
+import { FindAccount } from "./pages/auth/FindAccount";
+import { SignupSuccess } from "./pages/auth/SignupSuccess";
+import { ProfilePage } from "./pages/profile/ProfilePage";
 
-import { NoticePage } from "./pages/NoticePage";
-import { NoticeDetail } from "./pages/NoticeDetail";
-import { NoticeWrite } from "./pages/NoticeWrite";
+import { NoticePage } from "./pages/notice/NoticePage";
+import { NoticeDetail } from "./pages/notice/NoticeDetail";
+import { NoticeWrite } from "./pages/notice/NoticeWrite";
 
-import { EventPage } from "./pages/EventPage";
-import { EventDetail } from "./pages/EventDetail";
-import { EventWrite } from "./pages/EventWrite";
+import { EventPage } from "./pages/event/EventPage";
+import { EventDetail } from "./pages/event/EventDetail";
+import { EventWrite } from "./pages/event/EventWrite";
 
-import { BoardPage } from "./pages/BoardPage";
-import { BoardWrite } from "./pages/BoardWrite";
-import { BoardDetail } from "./pages/BoardDetail";
-import { AssemblyPage } from "./pages/AssemblyPage";
-import { AdminPage } from "./pages/AdminPage";
-import { MemberDetailTab } from "./pages/tabs/MemberDetailTab";
+import { BoardPage } from "./pages/board/BoardPage";
+import { BoardWrite } from "./pages/board/BoardWrite";
+import { BoardDetail } from "./pages/board/BoardDetail";
 
-function App() {
-  const [currentPage, setCurrentPage] = useState(() => localStorage.getItem("currentPage") || "home");
+import { AssemblyPage } from "./pages/assembly/AssemblyPage";
+import { AdminPage } from "./pages/admin/AdminPage";
+import { ContactAdmin } from "./pages/admin/ContactAdmin";
+import { MemberDetailTab } from "./pages/profile/tabs/MemberDetailTab";
+
+function AppContent() {
+  const navigate = useNavigate();
+
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem("isLoggedIn") === "true");
   const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem("isAdmin") === "true");
-
   const [currentUser, setCurrentUser] = useState<any>(() => {
     const savedUser = localStorage.getItem("currentUser");
     return savedUser ? JSON.parse(savedUser) : null;
@@ -45,93 +43,39 @@ function App() {
 
   const [userStatus, setUserStatus] = useState("ATTENDING");
 
-  const [selectedMemberLoginId, setSelectedMemberLoginId] = useState<string | null>(() => {
-    return localStorage.getItem("selectedMemberLoginId");
-  });
-
-  const [selectedNoticeId, setSelectedNoticeId] = useState<number | null>(() => {
-    const saved = localStorage.getItem("selectedNoticeId");
-    return saved ? Number(saved) : null;
-  });
-  const [selectedEventId, setSelectedEventId] = useState<number | null>(() => {
-    const saved = localStorage.getItem("selectedEventId");
-    return saved ? Number(saved) : null;
-  });
-  const [selectedPostId, setSelectedPostId] = useState<number | null>(() => {
-    const saved = localStorage.getItem("selectedPostId");
-    return saved ? Number(saved) : null;
-  });
-
   const [posts, setPosts] = useState<any[]>([]);
   const [notices, setNotices] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
 
-  useEffect(() => {
-    const requestInterceptor = axios.interceptors.request.use((config) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        config.headers["Authorization"] = `Bearer ${token}`;
-      }
-      return config;
-    });
-
-    const responseInterceptor = axios.interceptors.response.use(
-      (response) => {
-        if (response.config.url?.includes("/api/members/login")) {
-          return response;
-        }
-        if (response.data && response.data.status === "suspended") {
-          alert("관리자에 의해 계정이 정지되었습니다. 즉시 로그아웃됩니다.");
-          handleLogout(true);
-        }
-        return response;
-      },
-      (error) => {
-        if (error.response && (error.response.status === 403 || error.response.data?.status === "suspended")) {
-          alert("접근 권한이 없거나 정지된 계정입니다.");
-          handleLogout(true);
-        }
-        return Promise.reject(error);
-      }
-    );
-
-    return () => {
-      axios.interceptors.request.eject(requestInterceptor);
-      axios.interceptors.response.eject(responseInterceptor);
-    };
-  }, []);
-
   const handleLogout = async (isForced: boolean = false) => {
-    if (!isForced && !window.confirm("로그아웃 하시겠습니까?")) {
-      return;
-    }
-    const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
-    if (user && user.name) {
-      try {
-        await axios.post("http://localhost:8080/api/members/logout-log", {
-          name: user.name,
-          studentId: user.studentId
+    if (!isForced && !window.confirm("로그아웃 하시겠습니까?")) return;
+    try {
+      if (currentUser && currentUser.name) {
+        await api.post("/members/logout-log", {
+          name: currentUser.name,
+          studentId: currentUser.studentId
         });
-      } catch (e) {
-        console.error("로그아웃 로그 전송 실패", e);
       }
+    } catch (e) {
+      console.error("로그아웃 로그 전송 실패", e);
     }
     setIsLoggedIn(false);
     setIsAdmin(false);
     setCurrentUser(null);
     localStorage.clear();
-    handleNavigate("home");
     if (isForced) {
       window.location.href = "/";
+    } else {
+      navigate("/");
     }
   };
 
   const fetchData = async () => {
     try {
       const [postsRes, noticesRes, eventsRes] = await Promise.all([
-        axios.get('http://localhost:8080/api/posts'),
-        axios.get('http://localhost:8080/api/notices'),
-        axios.get('http://localhost:8080/api/events')
+        api.get('/posts'),
+        api.get('/notices'),
+        api.get('/events')
       ]);
       if (postsRes.data) setPosts(postsRes.data);
       if (noticesRes.data) setNotices(noticesRes.data);
@@ -145,49 +89,37 @@ function App() {
     fetchData();
   }, []);
 
+  const location = useLocation();
+
   useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
-      if (event.state) {
-        const { pageId, itemId } = event.state;
-        setCurrentPage(pageId || "home");
-        if (pageId === "member-detail") setSelectedMemberLoginId(itemId || null);
-        else if (pageId?.startsWith("notice-")) setSelectedNoticeId(itemId || null);
-        else if (pageId?.startsWith("event-")) setSelectedEventId(itemId || null);
-        else if (pageId?.startsWith("board-detail") || pageId === "board-write") setSelectedPostId(itemId || null);
-      } else {
-        setCurrentPage("home");
-      }
-    };
-    window.addEventListener("popstate", handlePopState);
-    if (!window.history.state) {
-      window.history.replaceState({ pageId: currentPage, itemId: selectedPostId || selectedNoticeId || selectedEventId || selectedMemberLoginId }, "");
+    if (location.hash) {
+      setTimeout(() => {
+        const id = location.hash.replace('#', '');
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    } else {
+      window.scrollTo(0, 0);
     }
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [currentPage, selectedPostId, selectedNoticeId, selectedEventId, selectedMemberLoginId]);
+  }, [location.pathname, location.hash]);
 
   useEffect(() => {
     localStorage.setItem("isLoggedIn", isLoggedIn.toString());
     localStorage.setItem("isAdmin", isAdmin.toString());
-    localStorage.setItem("currentPage", currentPage);
     if (currentUser) {
       localStorage.setItem("currentUser", JSON.stringify(currentUser));
     } else {
       localStorage.removeItem("currentUser");
     }
-    if (selectedNoticeId !== null) localStorage.setItem("selectedNoticeId", selectedNoticeId.toString());
-    else localStorage.removeItem("selectedNoticeId");
-    if (selectedEventId !== null) localStorage.setItem("selectedEventId", selectedEventId.toString());
-    else localStorage.removeItem("selectedEventId");
-    if (selectedPostId !== null) localStorage.setItem("selectedPostId", selectedPostId.toString());
-    else localStorage.removeItem("selectedPostId");
-    if (selectedMemberLoginId !== null) localStorage.setItem("selectedMemberLoginId", selectedMemberLoginId);
-    else localStorage.removeItem("selectedMemberLoginId");
-  }, [isLoggedIn, isAdmin, currentPage, selectedNoticeId, selectedEventId, selectedPostId, selectedMemberLoginId, currentUser]);
+  }, [isLoggedIn, isAdmin, currentUser]);
 
+  // Board Handlers (Consider moving these to Board specific context/hooks in the future)
   const handleToggleLike = async (postId: number) => {
     if (!isLoggedIn) { alert("로그인이 필요한 서비스입니다."); return; }
     try {
-      const response = await axios.post(`http://localhost:8080/api/posts/${postId}/like`);
+      const response = await api.post(`/posts/${postId}/like`);
       setPosts(prev => prev.map(p => p.id === postId ? response.data : p));
     } catch (e) { console.error("좋아요 처리 실패", e); }
   };
@@ -195,9 +127,7 @@ function App() {
   const handleAddComment = async (postId: number, content: string) => {
     if (!isLoggedIn) { alert("로그인이 필요합니다."); return; }
     try {
-      const response = await axios.post(`http://localhost:8080/api/posts/${postId}/comments`, {
-        content: content
-      });
+      const response = await api.post(`/posts/${postId}/comments`, { content });
       setPosts(prev => prev.map(p => p.id === postId ? response.data : p));
     } catch (e) { console.error("댓글 등록 실패", e); }
   };
@@ -205,10 +135,7 @@ function App() {
   const handleAddReply = async (postId: number, commentId: number, content: string) => {
     if (!isLoggedIn) { alert("로그인이 필요합니다."); return; }
     try {
-      const response = await axios.post(`http://localhost:8080/api/posts/${postId}/comments`, {
-        content: content,
-        parentId: commentId
-      });
+      const response = await api.post(`/posts/${postId}/comments`, { content, parentId: commentId });
       setPosts(prev => prev.map(p => p.id === postId ? response.data : p));
     } catch (e) { console.error("답글 등록 실패", e); }
   };
@@ -216,7 +143,7 @@ function App() {
   const handleToggleCommentLike = async (postId: number, commentId: number) => {
     if (!isLoggedIn) { alert("로그인이 필요합니다."); return; }
     try {
-      const response = await axios.post(`http://localhost:8080/api/posts/${postId}/comments/${commentId}/like`);
+      const response = await api.post(`/posts/${postId}/comments/${commentId}/like`);
       setPosts(prev => prev.map(p => p.id === postId ? response.data : p));
     } catch (e) { console.error("댓글 좋아요 실패", e); }
   };
@@ -224,7 +151,7 @@ function App() {
   const handleDeleteComment = async (postId: number, commentId: number) => {
     if (!window.confirm("댓글을 삭제하시겠습니까?")) return;
     try {
-      const response = await axios.delete(`http://localhost:8080/api/posts/${postId}/comments/${commentId}`);
+      const response = await api.delete(`/posts/${postId}/comments/${commentId}`);
       setPosts(prev => prev.map(p => p.id === postId ? response.data : p));
     } catch (e) { console.error("댓글 삭제 실패", e); }
   };
@@ -232,13 +159,11 @@ function App() {
   const handleDeletePost = async (id: number) => {
     if (window.confirm("이 게시물을 정말로 삭제하시겠습니까?")) {
       try {
-        await axios.delete(`http://localhost:8080/api/posts/${id}`);
+        await api.delete(`/posts/${id}`);
         setPosts(prev => prev.filter(p => p.id !== id));
         alert("게시물이 삭제되었습니다.");
-        handleNavigate("board-page");
-      } catch (e) {
-        console.error("삭제 실패", e);
-      }
+        navigate("/board");
+      } catch (e) { console.error("삭제 실패", e); }
     }
   };
 
@@ -246,13 +171,11 @@ function App() {
     if (!isAdmin || !isLoggedIn) return;
     if (window.confirm("이 공지사항을 삭제하시겠습니까?")) {
       try {
-        await axios.delete(`http://localhost:8080/api/notices/${id}`);
+        await api.delete(`/notices/${id}`);
         setNotices(prev => prev.filter(n => n.id !== id));
-        handleNavigate("notice-page");
+        navigate("/notice");
         alert("공지사항이 성공적으로 삭제되었습니다. ✨");
-      } catch (e) {
-        console.error("삭제 실패", e);
-      }
+      } catch (e) { console.error("삭제 실패", e); }
     }
   };
 
@@ -260,78 +183,59 @@ function App() {
     if (!isAdmin || !isLoggedIn) return;
     if (window.confirm("이 행사 기록을 삭제하시겠습니까?")) {
       try {
-        await axios.delete(`http://localhost:8080/api/events/${id}`);
+        await api.delete(`/events/${id}`);
         setEvents(prev => prev.filter(e => e.id !== id));
-        handleNavigate("event-page");
+        navigate("/event");
         alert("행사가 삭제되었습니다.");
-      } catch (e) {
-        console.error("행사 삭제 실패", e);
-      }
+      } catch (e) { console.error("행사 삭제 실패", e); }
     }
   };
 
-  const mainSections = ["home", "events", "notice", "board", "about", "faq"];
-
-  const handleNavigate = (pageId: string, itemId?: any) => {
-    window.history.pushState({ pageId, itemId }, "");
-    if (pageId === "member-detail") setSelectedMemberLoginId(itemId || null);
-    else if (pageId.startsWith("notice-")) setSelectedNoticeId(itemId || null);
-    else if (pageId.startsWith("event-")) setSelectedEventId(itemId || null);
-    else if (pageId.startsWith("board-detail") || pageId === "board-write") setSelectedPostId(itemId || null);
-
-    if (mainSections.includes(pageId)) {
-      if (currentPage !== "home" && !mainSections.includes(currentPage)) {
-        setCurrentPage("home");
-        setTimeout(() => {
-          const el = document.getElementById(pageId);
-          if (el) el.scrollIntoView({ behavior: "smooth" });
-        }, 150);
-      } else {
-        const el = document.getElementById(pageId);
-        if (el) el.scrollIntoView({ behavior: "smooth" });
-        setCurrentPage(pageId);
-      }
+  // Helper for components that still rely on onNavigate string prop temporarily
+  const handleNavigateCompat = (path: string, param?: any) => {
+    if (path === "home") {
+      navigate("/");
+    } else if (path === "event" || path === "events") {
+      navigate("/event");
+    } else if (path === "notice") {
+      navigate("/notice");
+    } else if (path === "about" || path === "faq") {
+      // "동아리소개"와 "자주 묻는 질문"은 홈 화면의 해시 앵커로 이동
+      navigate(`/#${path}`);
+    } else if (path === "board-detail" && param) {
+      navigate(`/board/${param}`);
+    } else if (path === "notice-detail" && param) {
+      navigate(`/notice/${param}`);
+    } else if (path === "event-detail" && param) {
+      navigate(`/event/${param}`);
+    } else if (path === "notice-write") {
+      navigate("/notice/write");
+    } else if (path === "board-write") {
+      navigate("/board/write");
+    } else if (path === "event-write") {
+      navigate("/event/write");
+    } else if (path === "member-detail" && param) {
+      navigate(`/assembly/member/${param}`);
+    } else if (path === "board" || path === "board-page") {
+      navigate("/board");
+    } else if (path === "assembly") {
+      navigate("/assembly");
+    } else if (path === "admin") {
+      navigate("/admin");
     } else {
-      setCurrentPage(pageId);
-      window.scrollTo(0, 0);
+      navigate(`/${path.replace("-page", "")}`);
     }
   };
 
-  const homeDisplayPosts = useMemo(() => {
-    const feePost = posts.find(p => p.category === "회비");
-    const otherPosts = posts.filter(p => p.category !== "회비").slice(0, 2);
-    const result = [];
-    if (feePost) result.push(feePost);
-    result.push(...otherPosts);
-    return result;
-  }, [posts]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && (currentPage === "home" || mainSections.includes(currentPage))) {
-            setCurrentPage(entry.target.id);
-          }
-        });
-      },
-      { rootMargin: "-20% 0px -70% 0px" }
-    );
-    mainSections.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-    return () => observer.disconnect();
-  }, [currentPage]);
-
-  const hideLayout = ["login", "signup", "find-account", "signup-success", "contact-admin", "notice-write", "event-write", "board-write"];
+  const hideLayoutPaths = ["/login", "/signup", "/find-account", "/signup-success", "/contact-admin"];
+  const isLayoutHidden = hideLayoutPaths.some(path => window.location.pathname.startsWith(path));
 
   return (
-    <div className="min-h-screen bg-white font-sans selection:bg-indigo-100 selection:text-indigo-700">
-      {!hideLayout.includes(currentPage) && (
+    <>
+      {!isLayoutHidden && (
         <Navbar
-          onNavigate={handleNavigate}
-          currentPage={currentPage}
+          onNavigate={handleNavigateCompat}
+          currentPage={window.location.pathname.slice(1) || "home"}
           isLoggedIn={isLoggedIn}
           onLogout={() => handleLogout(false)}
           userRole={isAdmin ? "ADMIN" : "USER"}
@@ -339,92 +243,76 @@ function App() {
       )}
 
       <main>
-        {(mainSections.includes(currentPage) || currentPage === "home") ? (
-          <>
-            <div id="home"><Hero isAdmin={isAdmin && isLoggedIn} /></div>
-            <div id="events" className="scroll-mt-20"><Events onNavigate={handleNavigate} events={events.slice(0, 3)} isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} /></div>
-            <div id="notice" className="scroll-mt-20"><Notice onNavigate={handleNavigate} notices={notices} /></div>
+        <Routes>
+          <Route path="/" element={<Home isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} events={events} notices={notices} posts={posts} />} />
 
-            {/* ✨ 분리된 Board 섹션 사용 */}
-            <Board onNavigate={handleNavigate} posts={homeDisplayPosts} />
+          <Route path="/login" element={<Login onNavigate={handleNavigateCompat} onLoginSuccess={(userData: any) => { setIsLoggedIn(true); setIsAdmin(userData.role === "ADMIN"); setCurrentUser(userData); navigate("/"); }} />} />
+          <Route path="/signup" element={<Signup onNavigate={handleNavigateCompat} />} />
+          <Route path="/find-account" element={<FindAccount onNavigate={handleNavigateCompat} />} />
+          <Route path="/signup-success" element={<SignupSuccess onNavigate={handleNavigateCompat} />} />
 
-            <div id="about" className="scroll-mt-20"><About /></div>
-            <div id="faq" className="scroll-mt-20"><FAQ /></div>
-          </>
-        ) : (
-          <AnimatePresence mode="wait">
-            {currentPage === "login" ? (
-              <Login onNavigate={handleNavigate} onLoginSuccess={(userData) => { setIsLoggedIn(true); setIsAdmin(userData.role === "ADMIN"); setCurrentUser(userData); handleNavigate("home"); }} key="login" />
-            ) : currentPage === "signup" ? (
-              <Signup onNavigate={handleNavigate} key="signup" />
-            ) : currentPage === "find-account" ? (
-              <FindAccount onNavigate={handleNavigate} key="find-account" />
-            ) : currentPage === "signup-success" ? (
-              <SignupSuccess onNavigate={handleNavigate} key="signup-success" />
-            ) : currentPage === "profile" ? (
-              <ProfilePage onNavigate={handleNavigate} user={currentUser} setUser={setCurrentUser} posts={posts} />
-            ) : currentPage === "assembly" ? (
-              <AssemblyPage isAdmin={isAdmin} userStatus={userStatus} onNavigate={handleNavigate} loginId={currentUser?.loginId} />
-            ) : currentPage === "member-detail" ? (
-              <MemberDetailTab
-                loginId={selectedMemberLoginId!}
-                onBack={() => handleNavigate("assembly")}
-              />
-            ) : currentPage === "admin" ? (
-              <AdminPage />
-            ) : currentPage === "contact-admin" ? (
-              <ContactAdmin onNavigate={handleNavigate} key="contact-admin" />
-            ) : currentPage === "board-page" ? (
-              <BoardPage onNavigate={handleNavigate} posts={posts} isAdmin={isAdmin && isLoggedIn} user={currentUser} setPosts={setPosts} key="board-page" />
-            ) : currentPage === "board-write" ? (
-              <BoardWrite onNavigate={handleNavigate} isAdmin={isAdmin && isLoggedIn} user={currentUser} fetchPosts={fetchData} post={posts.find(p => Number(p.id) === Number(selectedPostId))} key="board-write" />
-            ) : currentPage === "board-detail" ? (
-              <BoardDetail
-                onNavigate={handleNavigate}
-                post={posts.find(p => Number(p.id) === Number(selectedPostId))}
-                isAdmin={isAdmin && isLoggedIn}
-                isLoggedIn={isLoggedIn}
-                user={currentUser}
-                setPost={(updated: any) => setPosts(prev => prev.map(p => p.id === updated.id ? updated : p))}
-                onDelete={handleDeletePost}
-                onToggleLike={handleToggleLike}
-                onAddComment={handleAddComment}
-                onDeleteComment={handleDeleteComment}
-                onToggleCommentLike={handleToggleCommentLike}
-                onAddReply={handleAddReply}
-                key="board-detail"
-              />
-            ) : currentPage === "notice-page" ? (
-              <NoticePage onNavigate={handleNavigate} isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} notices={notices} user={currentUser} fetchNotices={fetchData} key="notice-page" />
-            ) : currentPage === "notice-detail" ? (
-              <NoticeDetail onNavigate={handleNavigate} isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} notice={notices.find(n => n.id === selectedNoticeId)} user={currentUser} setNotice={(updated: any) => setNotices(prev => prev.map(n => n.id === updated.id ? updated : n))} onDelete={handleDeleteNotice} key="notice-detail" />
-            ) : currentPage === "notice-write" ? (
-              (isAdmin && isLoggedIn) ? (
-                <NoticeWrite onNavigate={handleNavigate} notice={notices.find(n => n.id === selectedNoticeId)} user={currentUser} fetchNotices={fetchData} key="notice-write" />
-              ) : (
-                <div className="pt-40 text-center h-screen bg-slate-50">{useEffect(() => { alert("간부진만 접근 가능한 페이지입니다."); handleNavigate("home"); }, [])}</div>
-              )
-            ) : currentPage === "event-page" ? (
-              <EventPage onNavigate={handleNavigate} isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} events={events} user={currentUser} setEvents={setEvents} key="event-page" />
-            ) : currentPage === "event-detail" ? (
-              <EventDetail onNavigate={handleNavigate} isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} event={events.find(e => e.id === selectedEventId)} onDelete={handleDeleteEvent} user={currentUser} setEvent={(updatedEvent: any) => { setEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e)); }} key="event-detail" />
-            ) : currentPage === "event-write" ? (
-              (isAdmin && isLoggedIn) ? (
-                <EventWrite onNavigate={handleNavigate} event={events.find(e => e.id === selectedEventId)} user={currentUser} fetchEvents={fetchData} key="event-write" />
-              ) : (
-                <div className="pt-40 text-center h-screen bg-slate-50">{useEffect(() => { alert("간부진만 접근 가능한 페이지입니다."); handleNavigate("home"); }, [])}</div>
-              )
-            ) : (
-              <div className="pt-40 text-center h-screen bg-slate-50" key="fallback">
-                <h2 className="text-3xl font-black text-slate-900 mb-8 uppercase">{currentPage} Page</h2>
-                <button onClick={() => handleNavigate("home")} className="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-bold">홈으로 돌아가기</button>
-              </div>
-            )}
-          </AnimatePresence>
-        )}
+          <Route path="/profile" element={<ProfilePage onNavigate={handleNavigateCompat} user={currentUser} setUser={setCurrentUser} posts={posts} />} />
+
+          <Route path="/assembly" element={<AssemblyPage isAdmin={isAdmin} userStatus={userStatus} onNavigate={handleNavigateCompat} loginId={currentUser?.loginId} />} />
+          <Route path="/assembly/member/:id" element={<MemberDetailTab loginId={""} onBack={() => navigate("/assembly")} />} />
+
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/contact-admin" element={<ContactAdmin onNavigate={handleNavigateCompat} />} />
+
+          <Route path="/board" element={<BoardPage onNavigate={handleNavigateCompat} posts={posts} isAdmin={isAdmin && isLoggedIn} user={currentUser} setPosts={setPosts} />} />
+          <Route path="/board/write" element={<BoardWrite onNavigate={handleNavigateCompat} isAdmin={isAdmin && isLoggedIn} user={currentUser} fetchPosts={fetchData} post={undefined} />} />
+          <Route path="/board/:id" element={<BoardDetailWrapper posts={posts} isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} user={currentUser} setPosts={setPosts} onDelete={handleDeletePost} onToggleLike={handleToggleLike} onAddComment={handleAddComment} onDeleteComment={handleDeleteComment} onToggleCommentLike={handleToggleCommentLike} onAddReply={handleAddReply} handleNavigateCompat={handleNavigateCompat} />} />
+
+          <Route path="/notice" element={<NoticePage onNavigate={handleNavigateCompat} isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} notices={notices} user={currentUser} fetchNotices={fetchData} />} />
+          <Route path="/notice/write" element={(isAdmin && isLoggedIn) ? <NoticeWrite onNavigate={handleNavigateCompat} notice={undefined} user={currentUser} fetchNotices={fetchData} /> : <Navigate to="/" replace />} />
+          <Route path="/notice/:id" element={<NoticeDetailWrapper notices={notices} isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} user={currentUser} setNotices={setNotices} onDelete={handleDeleteNotice} handleNavigateCompat={handleNavigateCompat} />} />
+
+          <Route path="/event" element={<EventPage onNavigate={handleNavigateCompat} isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} events={events} user={currentUser} setEvents={setEvents} />} />
+          <Route path="/event/write" element={(isAdmin && isLoggedIn) ? <EventWrite onNavigate={handleNavigateCompat} event={undefined} user={currentUser} fetchEvents={fetchData} /> : <Navigate to="/" replace />} />
+          <Route path="/event/:id" element={<EventDetailWrapper events={events} isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} user={currentUser} setEvents={setEvents} onDelete={handleDeleteEvent} handleNavigateCompat={handleNavigateCompat} />} />
+
+          <Route path="*" element={
+            <div className="pt-40 text-center h-screen bg-slate-50">
+              <h2 className="text-3xl font-black text-slate-900 mb-8 uppercase">404 Not Found</h2>
+              <button onClick={() => navigate("/")} className="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-bold">홈으로 돌아가기</button>
+            </div>
+          } />
+        </Routes>
       </main>
 
-      {!hideLayout.includes(currentPage) && <Footer onNavigate={handleNavigate} />}
+      {!isLayoutHidden && <Footer onNavigate={handleNavigateCompat} />}
+    </>
+  );
+}
+
+// Wrapper components to extract ID from URL params via react-router wrapper. 
+// Since detail pages are expecting full object props in old code, we find it here.
+import { useParams } from 'react-router-dom';
+
+function BoardDetailWrapper({ posts, isAdmin, isLoggedIn, user, setPosts, onDelete, onToggleLike, onAddComment, onDeleteComment, onToggleCommentLike, onAddReply, handleNavigateCompat }: any) {
+  const { id } = useParams();
+  const post = posts.find((p: any) => Number(p.id) === Number(id));
+  return <BoardDetail onNavigate={handleNavigateCompat} post={post} isAdmin={isAdmin} isLoggedIn={isLoggedIn} user={user} setPost={(updated: any) => setPosts((prev: any) => prev.map((p: any) => p.id === updated.id ? updated : p))} onDelete={onDelete} onToggleLike={onToggleLike} onAddComment={onAddComment} onDeleteComment={onDeleteComment} onToggleCommentLike={onToggleCommentLike} onAddReply={onAddReply} />;
+}
+
+function NoticeDetailWrapper({ notices, isAdmin, isLoggedIn, user, setNotices, onDelete, handleNavigateCompat }: any) {
+  const { id } = useParams();
+  const notice = notices.find((n: any) => Number(n.id) === Number(id));
+  return <NoticeDetail onNavigate={handleNavigateCompat} isAdmin={isAdmin} isLoggedIn={isLoggedIn} notice={notice} user={user} setNotice={(updated: any) => setNotices((prev: any) => prev.map((n: any) => n.id === updated.id ? updated : n))} onDelete={onDelete} />;
+}
+
+function EventDetailWrapper({ events, isAdmin, isLoggedIn, user, setEvents, onDelete, handleNavigateCompat }: any) {
+  const { id } = useParams();
+  const event = events.find((e: any) => Number(e.id) === Number(id));
+  return <EventDetail onNavigate={handleNavigateCompat} isAdmin={isAdmin} isLoggedIn={isLoggedIn} event={event} onDelete={onDelete} user={user} setEvent={(updatedEvent: any) => { setEvents((prev: any) => prev.map((e: any) => e.id === updatedEvent.id ? updatedEvent : e)); }} />;
+}
+
+function App() {
+  return (
+    <div className="min-h-screen bg-white font-sans selection:bg-indigo-100 selection:text-indigo-700">
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
     </div>
   );
 }

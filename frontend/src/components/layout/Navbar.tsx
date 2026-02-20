@@ -1,25 +1,26 @@
+import { api } from "../../api/axios";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogOut, ChevronRight } from "lucide-react"; 
+import { Menu, X, LogOut, ChevronRight } from "lucide-react";
 import { Button } from "../ui/button";
-import axios from "axios"; // ✨ 로그아웃 로그 기록을 위해 axios 추가
+ // ✨ 로그아웃 로그 기록을 위해 axios 추가
 
 // 전체 메뉴 데이터
 const navLinks = [
   { name: "홈", id: "home" },
-  { name: "주요행사", id: "events" },
+  { name: "주요행사", id: "event" },
   { name: "공지사항", id: "notice" },
   { name: "게시판", id: "board" },
   { name: "동아리소개", id: "about" },
   { name: "자주 묻는 질문", id: "faq" },
-  { name: "총회", id: "assembly" }, 
+  { name: "총회", id: "assembly" },
   { name: "관리", id: "admin" }, // ✨ 관리자 전용 메뉴 추가
 ];
 
 interface NavbarProps {
   onNavigate: (page: string, id?: number) => void;
   currentPage: string;
-  isLoggedIn: boolean; 
+  isLoggedIn: boolean;
   userRole: string; // ✨ 관리자 권한 확인을 위해 추가
   onLogout: () => void;
 }
@@ -30,7 +31,7 @@ export const Navbar = ({ onNavigate, currentPage, isLoggedIn, userRole, onLogout
 
   // ✨ 컴포넌트 마운트 시 및 로그인 상태 변경 시 사용자 정보 로드
   useEffect(() => {
-    const savedUser = localStorage.getItem("currentUser"); 
+    const savedUser = localStorage.getItem("currentUser");
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     } else {
@@ -46,10 +47,10 @@ export const Navbar = ({ onNavigate, currentPage, isLoggedIn, userRole, onLogout
   // ✨ 로그아웃 클릭 시 로그를 먼저 남기고 부모의 onLogout 실행
   const handleLogoutClick = async () => {
     const currentUserInfo = JSON.parse(localStorage.getItem("currentUser") || "{}");
-    
+
     if (currentUserInfo && currentUserInfo.name) {
       try {
-        await axios.post("http://localhost:8080/api/members/logout-log", {
+        await api.post("/members/logout-log", {
           name: currentUserInfo.name,
           studentId: currentUserInfo.studentId
         });
@@ -63,8 +64,8 @@ export const Navbar = ({ onNavigate, currentPage, isLoggedIn, userRole, onLogout
   };
 
   const visibleLinks = navLinks.filter(link => {
-    if (link.id === "assembly") return isLoggedIn; 
-    if (link.id === "admin") return isLoggedIn && userRole === "ADMIN"; 
+    if (link.id === "assembly") return isLoggedIn;
+    if (link.id === "admin") return isLoggedIn && userRole === "ADMIN";
     return true;
   });
 
@@ -72,7 +73,7 @@ export const Navbar = ({ onNavigate, currentPage, isLoggedIn, userRole, onLogout
     <>
       <nav className="fixed top-0 left-0 right-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-slate-100 h-20 flex items-center shadow-sm">
         <div className="w-full px-8 md:px-12 flex items-center justify-between">
-          
+
           {/* 로고 영역 */}
           <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => handleNavigate("home")}>
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200">
@@ -89,13 +90,12 @@ export const Navbar = ({ onNavigate, currentPage, isLoggedIn, userRole, onLogout
                 <button
                   key={link.id}
                   onClick={() => handleNavigate(link.id)}
-                  className={`relative py-2 font-bold transition-all text-[15px] whitespace-nowrap group ${
-                    isActive ? "text-indigo-600" : "text-slate-500 hover:text-indigo-600"
-                  }`}
+                  className={`relative py-2 font-bold transition-all text-[15px] whitespace-nowrap group ${isActive ? "text-indigo-600" : "text-slate-500 hover:text-indigo-600"
+                    }`}
                 >
                   {link.name}
                   {isActive && (
-                    <motion.div 
+                    <motion.div
                       layoutId="activeUnderline"
                       className="absolute -bottom-1 left-0 right-0 h-0.5 bg-indigo-600 rounded-full"
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
@@ -124,15 +124,15 @@ export const Navbar = ({ onNavigate, currentPage, isLoggedIn, userRole, onLogout
               ) : (
                 <div className="flex items-center gap-3">
                   {/* ✨ 사람 아이콘 대신 디스코드 프로필 사진으로 교체 */}
-                  <div 
+                  <div
                     className="flex items-center gap-3 px-3 py-1.5 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer group"
                     onClick={() => handleNavigate("profile")}
                   >
                     <div className="w-8 h-8 rounded-xl overflow-hidden border-2 border-white shadow-sm group-hover:scale-105 transition-transform">
                       {user?.avatarUrl || user?.profileImage ? (
-                        <img 
-                          src={user.avatarUrl || user.profileImage} 
-                          alt={user.name} 
+                        <img
+                          src={user.avatarUrl || user.profileImage}
+                          alt={user.name}
                           className="w-full h-full object-cover"
                           onError={(e: any) => {
                             e.target.src = "https://cdn.discordapp.com/embed/avatars/0.png"; // 로드 실패 시 디스코드 기본 아바타
@@ -146,10 +146,10 @@ export const Navbar = ({ onNavigate, currentPage, isLoggedIn, userRole, onLogout
                     </div>
                     <span className="text-sm font-black text-slate-700">{user?.name || "사용자"} 님</span>
                   </div>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className="font-bold text-slate-400 hover:text-red-500 flex items-center gap-2"
-                    onClick={handleLogoutClick} 
+                    onClick={handleLogoutClick}
                   >
                     <LogOut size={16} /> 로그아웃
                   </Button>
@@ -185,21 +185,21 @@ export const Navbar = ({ onNavigate, currentPage, isLoggedIn, userRole, onLogout
                   </>
                 ) : (
                   <div className="space-y-4">
-                    <div 
+                    <div
                       className="px-4 py-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between group cursor-pointer"
                       onClick={() => handleNavigate("profile")}
                     >
-                       <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl overflow-hidden border-2 border-white shadow-sm">
-                          <img 
-                            src={user?.avatarUrl || user?.profileImage || "https://cdn.discordapp.com/embed/avatars/0.png"} 
-                            alt="profile" 
-                            className="w-full h-full object-cover" 
+                          <img
+                            src={user?.avatarUrl || user?.profileImage || "https://cdn.discordapp.com/embed/avatars/0.png"}
+                            alt="profile"
+                            className="w-full h-full object-cover"
                           />
                         </div>
                         <span className="font-bold text-slate-700">{user?.name || "사용자"} 님</span>
-                       </div>
-                       <ChevronRight size={18} className="text-slate-300" />
+                      </div>
+                      <ChevronRight size={18} className="text-slate-300" />
                     </div>
                     <Button className="w-full py-6 bg-red-50 text-red-500 rounded-2xl font-bold flex items-center justify-center gap-2" onClick={handleLogoutClick}>
                       <LogOut size={18} /> 로그아웃

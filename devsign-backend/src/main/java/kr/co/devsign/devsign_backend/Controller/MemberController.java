@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/members")
@@ -21,6 +22,11 @@ public class MemberController {
     public ResponseEntity<?> signup(@RequestBody Map<String, String> payload, HttpServletRequest request) {
         Member saved = memberService.signup(payload, request.getRemoteAddr());
         return ResponseEntity.ok(saved);
+    }
+
+    @GetMapping("/all")
+    public List<Member> getAllMembers() {
+        return memberService.getAllMembers();
     }
 
     @PostMapping("/login")

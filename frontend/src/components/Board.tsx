@@ -1,3 +1,4 @@
+import { api } from "../api/axios";
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { MessageSquare, Eye, Clock, User } from 'lucide-react';
@@ -27,7 +28,7 @@ export const Board = () => {
     try {
       setIsLoading(true);
       // 백엔드 API 호출
-      const response = await axios.get('http://localhost:8080/api/posts');
+      const response = await api.get('/posts');
       setPosts(response.data);
     } catch (error) {
       console.error("데이터를 가져오는 중 에러 발생!", error);

@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -67,6 +68,10 @@ public class MemberService {
         discordAuthRepository.delete(auth);
 
         return saved;
+    }
+
+    public List<Member> getAllMembers() {
+        return memberRepository.findAll();
     }
 
     public Map<String, Object> login(Member loginRequest, HttpServletRequest request) {
