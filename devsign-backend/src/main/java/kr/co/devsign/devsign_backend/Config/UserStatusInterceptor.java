@@ -1,12 +1,13 @@
 package kr.co.devsign.devsign_backend.Config;
 
-
+import kr.co.devsign.devsign_backend.Entity.Member;
+import kr.co.devsign.devsign_backend.Repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import kr.co.devsign.devsign_backend.Entity.Member;
-import kr.co.devsign.devsign_backend.Repository.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -22,10 +23,14 @@ public class UserStatusInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // 헤더에서 로그인 아이디를 가져옵니다 (프론트에서 보내줘야 함)
-        String loginId = request.getHeader("X-User-LoginId");
+        // SecurityContext에서 인증된 사용자 정보 가져오기 (JWT 필터에서 설정됨)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (loginId != null && !loginId.isEmpty()) {
+        if (authentication != null && authentication.isAuthenticated()
+                && authentication.getPrincipal() != null
+                && !authentication.getPrincipal().equals("anonymousUser")) {
+
+            String loginId = (String) authentication.getPrincipal();
             Optional<Member> memberOpt = memberRepository.findByLoginId(loginId);
 
             if (memberOpt.isPresent() && memberOpt.get().isSuspended()) {
