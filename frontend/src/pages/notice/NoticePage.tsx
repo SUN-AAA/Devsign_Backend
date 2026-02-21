@@ -1,4 +1,5 @@
 import { api } from "../../api/axios";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Megaphone, Calendar, ChevronRight, Search,
@@ -23,6 +24,27 @@ export const NoticePage = ({
   user?: any;
   fetchNotices?: () => void;
 }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredNotices = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    if (!query) return notices;
+
+    return notices.filter((notice) => {
+      const candidates = [
+        notice?.title,
+        notice?.author,
+        notice?.tag,
+        notice?.category,
+        notice?.content
+      ];
+
+      return candidates.some(
+        (value) => typeof value === "string" && value.toLowerCase().includes(query)
+      );
+    });
+  }, [notices, searchQuery]);
 
   // ✨ 상단 고정 토글 핸들러 (즉각적인 상태 반영 포함)
   const handleTogglePin = async (e: React.MouseEvent, id: number) => {
@@ -56,7 +78,13 @@ export const NoticePage = ({
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-              <input type="text" placeholder="검색" className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-sm" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="검색어를 입력하세요"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-sm"
+              />
             </div>
 
             {isLoggedIn && isAdmin && (
@@ -72,7 +100,7 @@ export const NoticePage = ({
 
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
           <div className="divide-y divide-slate-50">
-            {notices.map((notice) => (
+            {filteredNotices.map((notice) => (
               <motion.div
                 key={notice.id}
                 whileHover={{ backgroundColor: "rgba(248, 250, 252, 0.8)" }}
@@ -131,9 +159,11 @@ export const NoticePage = ({
               </motion.div>
             ))}
 
-            {notices.length === 0 && (
+            {filteredNotices.length === 0 && (
               <div className="py-20 text-center">
-                <p className="text-slate-400 font-bold">등록된 공지사항이 없습니다.</p>
+                <p className="text-slate-400 font-bold">
+                  {searchQuery.trim() ? "검색 결과가 없습니다." : "등록된 공지사항이 없습니다."}
+                </p>
               </div>
             )}
           </div>

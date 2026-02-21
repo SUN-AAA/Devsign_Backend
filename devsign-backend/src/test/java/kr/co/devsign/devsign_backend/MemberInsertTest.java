@@ -19,6 +19,7 @@ class MemberInsertTest {
     @Test
     void insertMembers() {
         // 1) 일반 유저
+        /*
         Member user = new Member();
         user.setLoginId("user");
         user.setPassword(passwordEncoder.encode("user1234@"));
@@ -33,7 +34,7 @@ class MemberInsertTest {
         user.setProfileImage(null);
 
         memberRepository.save(user);
-
+        */
         Member user2 = new Member();
         user2.setLoginId("user2"); // ★ unique
         user2.setPassword(passwordEncoder.encode("user1234@"));
@@ -48,7 +49,7 @@ class MemberInsertTest {
         user2.setProfileImage(null);
 
         memberRepository.save(user2);
-
+        /*
         // 2) 관리자
         Member admin = new Member();
         admin.setLoginId("admin"); // ★ unique
@@ -64,5 +65,7 @@ class MemberInsertTest {
         admin.setProfileImage(null);
 
         memberRepository.save(admin);
+        */
+
     }
 }
