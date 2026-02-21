@@ -63,6 +63,24 @@ spring.jpa.properties.hibernate.format_sql=true
 `DevsignBackendApplication` 실행
 
 
+### Discord Bot
+**1. 경로 이동**
+```
+cd discord-bot
+```
+**2. 의존성 설치**
+```
+python -m pip install discord.py fastapi "uvicorn[standard]"
+```
+**3. 봇 설정**
+- `discordBot.py`에서 `TOKEN`, `GUILD_ID`, `LOG_CHANNEL_ID`를 실제 값으로 설정
+
+**4. 실행**
+```
+python discordBot.py
+```
+
+
 ## API Guide
  
 - Base URL: `http://localhost:8080`  
@@ -252,6 +270,7 @@ Base: `/api/assembly`
 |---|---|---|---|---|
 | GET | `/my-submissions` | Auth | query: `loginId, year, semester` | `MySubmissionsResponse` |
 | GET | `/periods/{year}` | Auth | path: `year` | `List<SubmissionPeriodResponse>` |
+| GET | `/download` | Auth | query: `path` | `byte[]` |
 | POST | `/project-title` | Auth | `SaveProjectTitleRequest` | `StatusResponse` |
 | POST | `/submit` | Auth | `multipart/form-data` | `SubmitFilesResponse` |
 
@@ -345,6 +364,8 @@ MySubmissionsResponse: reports[], projectTitle
 ```
 Devsign_Backend/                              # 프로젝트 루트
 ├─ .idea/                                     # IntelliJ IDE 설정 파일
+├─ discord-bot/                               # Discord Bot + FastAPI 연동 서버
+│  └─ discordBot.py                           # 봇 실행 엔트리
 ├─ devsign-backend/                           # Spring Boot 백엔드 프로젝트
 │  ├─ .gradle/                                # Gradle 캐시/메타데이터(로컬 생성)
 │  ├─ build/                                  # 백엔드 빌드 산출물(컴파일 결과)
@@ -394,6 +415,7 @@ Devsign_Backend/                              # 프로젝트 루트
 │     │     └─ tabs/                          # 프로필 탭(총회 제출/관리 탭 포함)
 │     ├─ store/                               # 상태 관리 관련 모듈
 │     └─ utils/                               # 프론트 유틸 함수
+├─ docker-compose.yml                         # 서비스 오케스트레이션 설정
 └─ uploads/                                   # 업로드된 파일 저장 디렉토리(총회 제출 파일 등)
 
 ```
