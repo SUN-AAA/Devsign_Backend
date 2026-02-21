@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 
-export const BoardPage = ({ onNavigate, posts }: any) => {
+export const BoardPage = ({ onNavigate, posts, isLoggedIn }: any) => {
   const [activeCategory, setActiveCategory] = useState("전체");
   const [searchQuery, setSearchQuery] = useState(""); // 검색 기능 연동을 위한 상태
   const categories = ["전체", "회비", "자유", "질문"];
@@ -79,7 +79,13 @@ export const BoardPage = ({ onNavigate, posts }: any) => {
               />
             </div>
             <Button 
-              onClick={() => onNavigate("board-write")}
+              onClick={() => {
+                if (!isLoggedIn) {
+                  alert("로그인이 필요한 서비스입니다.");
+                  return;
+                }
+                onNavigate("board-write");
+              }}
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-7 rounded-2xl font-black shadow-xl shadow-indigo-100 transition-all active:scale-95 flex items-center gap-2"
             >
               <Pencil size={18} /> 글쓰기

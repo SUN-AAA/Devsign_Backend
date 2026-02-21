@@ -212,6 +212,10 @@ function AppContent() {
       if (param) navigate(`/notice/write/${param}`);
       else navigate("/notice/write");
     } else if (path === "board-write") {
+      if (!isLoggedIn) {
+        alert("로그인이 필요한 서비스입니다.");
+        return;
+      }
       if (param) navigate(`/board/write/${param}`);
       else navigate("/board/write");
     } else if (path === "event-write") {
@@ -262,9 +266,9 @@ function AppContent() {
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/contact-admin" element={<ContactAdmin onNavigate={handleNavigateCompat} />} />
 
-          <Route path="/board" element={<BoardPage onNavigate={handleNavigateCompat} posts={posts} isAdmin={isAdmin && isLoggedIn} user={currentUser} setPosts={setPosts} />} />
-          <Route path="/board/write" element={<BoardWriteWrapper posts={posts} onNavigate={handleNavigateCompat} isAdmin={isAdmin && isLoggedIn} user={currentUser} fetchPosts={fetchData} />} />
-          <Route path="/board/write/:id" element={<BoardWriteWrapper posts={posts} onNavigate={handleNavigateCompat} isAdmin={isAdmin && isLoggedIn} user={currentUser} fetchPosts={fetchData} />} />
+          <Route path="/board" element={<BoardPage onNavigate={handleNavigateCompat} posts={posts} isLoggedIn={isLoggedIn} isAdmin={isAdmin && isLoggedIn} user={currentUser} setPosts={setPosts} />} />
+          <Route path="/board/write" element={isLoggedIn ? <BoardWriteWrapper posts={posts} onNavigate={handleNavigateCompat} isAdmin={isAdmin && isLoggedIn} user={currentUser} fetchPosts={fetchData} /> : <Navigate to="/board" replace />} />
+          <Route path="/board/write/:id" element={isLoggedIn ? <BoardWriteWrapper posts={posts} onNavigate={handleNavigateCompat} isAdmin={isAdmin && isLoggedIn} user={currentUser} fetchPosts={fetchData} /> : <Navigate to="/board" replace />} />
           <Route path="/board/:id" element={<BoardDetailWrapper posts={posts} isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} user={currentUser} setPosts={setPosts} onDelete={handleDeletePost} onToggleLike={handleToggleLike} onAddComment={handleAddComment} onDeleteComment={handleDeleteComment} onToggleCommentLike={handleToggleCommentLike} onAddReply={handleAddReply} handleNavigateCompat={handleNavigateCompat} />} />
 
           <Route path="/notice" element={<NoticePage onNavigate={handleNavigateCompat} isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} notices={notices} user={currentUser} fetchNotices={fetchData} />} />
