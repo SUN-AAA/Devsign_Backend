@@ -1,15 +1,20 @@
 package kr.co.devsign.devsign_backend.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import kr.co.devsign.devsign_backend.service.AdminService;
 import kr.co.devsign.devsign_backend.dto.admin.AccessLogResponse;
 import kr.co.devsign.devsign_backend.dto.admin.AdminMemberResponse;
+import kr.co.devsign.devsign_backend.dto.admin.AdminPeriodResponse;
+import kr.co.devsign.devsign_backend.dto.admin.AdminPeriodSaveRequest;
+import kr.co.devsign.devsign_backend.dto.admin.AdminPeriodSubmissionResponse;
+import kr.co.devsign.devsign_backend.dto.admin.AdminPeriodZipRequest;
 import kr.co.devsign.devsign_backend.dto.admin.HeroSettingsRequest;
 import kr.co.devsign.devsign_backend.dto.admin.HeroSettingsResponse;
 import kr.co.devsign.devsign_backend.dto.admin.RestoreMemberRequest;
 import kr.co.devsign.devsign_backend.dto.admin.SyncDiscordResponse;
 import kr.co.devsign.devsign_backend.dto.common.StatusResponse;
+import kr.co.devsign.devsign_backend.service.AdminService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,6 +44,30 @@ public class AdminController {
     @PostMapping("/settings")
     public StatusResponse updateHeroSettings(@RequestBody HeroSettingsRequest settings) {
         return adminService.updateHeroSettings(settings);
+    }
+
+    @GetMapping("/periods/{year}")
+    public List<AdminPeriodResponse> getPeriods(@PathVariable int year) {
+        return adminService.getPeriods(year);
+    }
+
+    @GetMapping("/periods/submissions")
+    public List<AdminPeriodSubmissionResponse> getSubmittedMembers(
+            @RequestParam int year,
+            @RequestParam int semester,
+            @RequestParam int month
+    ) {
+        return adminService.getSubmittedMembers(year, semester, month);
+    }
+
+    @PostMapping("/periods/save-all")
+    public StatusResponse saveAllPeriods(@RequestBody List<AdminPeriodSaveRequest> periods) {
+        return adminService.saveAllPeriods(periods);
+    }
+
+    @PostMapping("/periods/download-zip")
+    public ResponseEntity<byte[]> downloadZip(@RequestBody AdminPeriodZipRequest request) {
+        return adminService.downloadPeriodZip(request);
     }
 
     @GetMapping("/sync-discord")

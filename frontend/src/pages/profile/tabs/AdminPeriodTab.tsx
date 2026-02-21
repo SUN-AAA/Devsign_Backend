@@ -407,7 +407,7 @@ export const AdminPeriodTab = () => {
 
                         <div className="flex items-center gap-2 mt-4 md:mt-0 w-full md:w-auto justify-end">
                           {/* ✨ 경로 매핑 오류 방지: 슬래시(/) 중복 제거 로직 반영 */}
-                          {member.presentationPath && (
+                          {member.presentationPath && (downloadType === "all" || downloadType === "ppt") && (
                             <a
                               href={`http://localhost:8080/${member.presentationPath.startsWith('/') ? member.presentationPath.substring(1) : member.presentationPath}`}
                               target="_blank"
@@ -418,7 +418,7 @@ export const AdminPeriodTab = () => {
                               <FileArchive size={16} />
                             </a>
                           )}
-                          {member.pdfPath && (
+                          {member.pdfPath && (downloadType === "all" || downloadType === "pdf") && (
                             <a
                               href={`http://localhost:8080/${member.pdfPath.startsWith('/') ? member.pdfPath.substring(1) : member.pdfPath}`}
                               target="_blank"

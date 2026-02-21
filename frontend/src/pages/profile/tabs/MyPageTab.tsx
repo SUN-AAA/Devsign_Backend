@@ -1,5 +1,5 @@
 import { api } from "../../../api/axios";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText, Check, Clock, X,
@@ -67,7 +67,7 @@ export const MyPageTab = ({ loginId }: { loginId: string }) => {
       });
 
       // ✅ 관리자가 설정한 제출 기간 로드
-      const periodRes = await api.get(`/admin/periods/${selectedTerm.year}`);
+      const periodRes = await api.get(`/assembly/periods/${selectedTerm.year}`);
 
       if (res.data) {
         setReports(res.data.reports || []);
@@ -149,9 +149,46 @@ export const MyPageTab = ({ loginId }: { loginId: string }) => {
   // ✅ 기간 내 제출 가능 로직 수정 (이미 제출한 경우도 기간 지나면 수정 불가)
   const canSubmit = useMemo(() => {
     if (!selectedReport || !selectedReport.isWithinPeriod) return false;
-    if (selectedReport.status === "제출완료") return true;
-    return uploadedFiles.presentation !== null && uploadedFiles.pdf !== null;
+    const hasNewFile = Boolean(uploadedFiles.presentation || uploadedFiles.pdf || uploadedFiles.other);
+    const hasExistingFile = Boolean(
+      selectedReport.presentationPath || selectedReport.pdfPath || selectedReport.otherPath
+    );
+    return hasNewFile || hasExistingFile;
   }, [uploadedFiles, selectedReport]);
+
+  const handlePresentationFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (!file) {
+      setUploadedFiles({ ...uploadedFiles, presentation: null });
+      return;
+    }
+
+    const lowerName = file.name.toLowerCase();
+    if (!lowerName.endsWith(".ppt") && !lowerName.endsWith(".pptx")) {
+      alert("발표자료는 .ppt 또는 .pptx 파일만 업로드할 수 있습니다.");
+      e.target.value = "";
+      return;
+    }
+
+    setUploadedFiles({ ...uploadedFiles, presentation: file });
+  };
+
+  const handlePdfFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (!file) {
+      setUploadedFiles({ ...uploadedFiles, pdf: null });
+      return;
+    }
+
+    const lowerName = file.name.toLowerCase();
+    if (!lowerName.endsWith(".pdf")) {
+      alert("PDF 항목에는 .pdf 파일만 업로드할 수 있습니다.");
+      e.target.value = "";
+      return;
+    }
+
+    setUploadedFiles({ ...uploadedFiles, pdf: file });
+  };
 
   const handleDownload = (path: string) => {
     if (!path) return;
@@ -161,6 +198,15 @@ export const MyPageTab = ({ loginId }: { loginId: string }) => {
   const handleSubmit = async () => {
     if (!loginId || loginId === "undefined") {
       alert("로그인 정보가 올바르지 않습니다. 다시 로그인해주세요.");
+      return;
+    }
+
+    const hasNewFile = Boolean(uploadedFiles.presentation || uploadedFiles.pdf || uploadedFiles.other);
+    const hasExistingFile = Boolean(
+      selectedReport?.presentationPath || selectedReport?.pdfPath || selectedReport?.otherPath
+    );
+    if (!hasNewFile && !hasExistingFile) {
+      alert("발표자료, PDF, 기타자료 중 하나 이상 업로드해 주세요.");
       return;
     }
 
@@ -188,7 +234,11 @@ export const MyPageTab = ({ loginId }: { loginId: string }) => {
       setSelectedReport(null);
       await fetchSubmissions();
     } catch (e: any) {
-      alert(`제출 실패: ${e.response?.data || e.message}`);
+      const serverMessage =
+        typeof e.response?.data === "string"
+          ? e.response.data
+          : e.response?.data?.message;
+      alert(`제출 실패: ${serverMessage || e.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -332,13 +382,25 @@ export const MyPageTab = ({ loginId }: { loginId: string }) => {
               <div className="space-y-4 mb-8">
                 <p className="text-xs font-bold text-slate-400 ml-1 uppercase">제출 파일 관리</p>
                 <div className="grid grid-cols-1 gap-3">
-                  <input type="file" ref={fileRefs.presentation} className="hidden" onChange={(e) => setUploadedFiles({ ...uploadedFiles, presentation: e.target.files![0] })} />
-                  <input type="file" ref={fileRefs.pdf} className="hidden" onChange={(e) => setUploadedFiles({ ...uploadedFiles, pdf: e.target.files![0] })} />
+                  <input
+                    type="file"
+                    accept=".ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                    ref={fileRefs.presentation}
+                    className="hidden"
+                    onChange={handlePresentationFileChange}
+                  />
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    ref={fileRefs.pdf}
+                    className="hidden"
+                    onChange={handlePdfFileChange}
+                  />
                   <input type="file" ref={fileRefs.other} className="hidden" onChange={(e) => setUploadedFiles({ ...uploadedFiles, other: e.target.files![0] })} />
 
                   <UploadSlot
                     label="발표자료"
-                    required={selectedReport.status !== "제출완료"}
+                    required={false}
                     disabled={!selectedReport.isWithinPeriod}
                     existingPath={selectedReport.presentationPath}
                     fileName={uploadedFiles.presentation?.name}
@@ -347,7 +409,7 @@ export const MyPageTab = ({ loginId }: { loginId: string }) => {
                   />
                   <UploadSlot
                     label="PDF"
-                    required={selectedReport.status !== "제출완료"}
+                    required={false}
                     disabled={!selectedReport.isWithinPeriod}
                     existingPath={selectedReport.pdfPath}
                     fileName={uploadedFiles.pdf?.name}
