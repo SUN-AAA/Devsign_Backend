@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Search, ChevronRight, School, Coffee, GraduationCap,
-  Loader2, AlertCircle, Users
+  Loader2, AlertCircle, Users, ShieldCheck
 } from "lucide-react";
 import { api } from "../../../api/axios";
 
@@ -88,10 +88,25 @@ export const CommunityTab = ({ onNavigate = () => { } }: { onNavigate?: (page: s
     fetchMembersAndProjects();
   }, []);
 
-  const MemberSection = ({ title, status, icon: Icon, colorClass }: { title: string, status: string, icon: any, colorClass: string }) => {
+  const MemberSection = ({
+    title,
+    status,
+    icon: Icon,
+    colorClass,
+    filterFn
+  }: {
+    title: string,
+    status?: string,
+    icon: any,
+    colorClass: string,
+    filterFn?: (member: any) => boolean
+  }) => {
 
     const filteredMembers = members
-      .filter(m => m.userStatus === status)
+      .filter(m => {
+        if (filterFn) return filterFn(m);
+        return m.userStatus === status;
+      })
       .filter(m =>
         m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (m.projectName && m.projectName.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -202,9 +217,33 @@ export const CommunityTab = ({ onNavigate = () => { } }: { onNavigate?: (page: s
         </div>
       </div>
 
-      <MemberSection title="재학 중인 부원" status="재학생" icon={School} colorClass="text-green-600" />
-      <MemberSection title="휴학 중인 부원" status="휴학생" icon={Coffee} colorClass="text-amber-600" />
-      <MemberSection title="졸업한 부원" status="졸업생" icon={GraduationCap} colorClass="text-slate-400" />
+      <MemberSection
+        title="관리자"
+        icon={ShieldCheck}
+        colorClass="text-indigo-600"
+        filterFn={(m) => m.role === "ADMIN" || m.userStatus === "관리자"}
+      />
+      <MemberSection
+        title="재학 중인 부원"
+        status="재학생"
+        icon={School}
+        colorClass="text-green-600"
+        filterFn={(m) => m.userStatus === "재학생" && m.role !== "ADMIN"}
+      />
+      <MemberSection
+        title="휴학 중인 부원"
+        status="휴학생"
+        icon={Coffee}
+        colorClass="text-amber-600"
+        filterFn={(m) => m.userStatus === "휴학생" && m.role !== "ADMIN"}
+      />
+      <MemberSection
+        title="졸업한 부원"
+        status="졸업생"
+        icon={GraduationCap}
+        colorClass="text-slate-400"
+        filterFn={(m) => m.userStatus === "졸업생" && m.role !== "ADMIN"}
+      />
 
       {members.length === 0 && (
         <div className="text-center py-20 bg-white rounded-[3rem] border border-dashed border-slate-200">
