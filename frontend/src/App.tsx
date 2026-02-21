@@ -247,7 +247,7 @@ function AppContent() {
 
       <main>
         <Routes>
-          <Route path="/" element={<Home isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} events={events} notices={notices} posts={posts} />} />
+          <Route path="/" element={<Home isAdmin={isAdmin && isLoggedIn} isLoggedIn={isLoggedIn} events={events} notices={notices} posts={posts} onNavigate={handleNavigateCompat} />} />
 
           <Route path="/login" element={<Login onNavigate={handleNavigateCompat} onLoginSuccess={(userData: any) => { setIsLoggedIn(true); setIsAdmin(userData.role === "ADMIN"); setCurrentUser(userData); navigate("/"); }} />} />
           <Route path="/signup" element={<Signup onNavigate={handleNavigateCompat} />} />
