@@ -21,6 +21,7 @@ import kr.co.devsign.devsign_backend.repository.AssemblyPeriodRepository;
 import kr.co.devsign.devsign_backend.repository.AssemblyReportRepository;
 import kr.co.devsign.devsign_backend.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +31,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -55,6 +58,8 @@ public class AdminService {
     private final AccessLogService accessLogService;
     private final DiscordBotClient discordBotClient;
     private final BCryptPasswordEncoder passwordEncoder;
+    @Value("${app.upload.base-dir:uploads}")
+    private String uploadBaseDir;
 
     private static final Map<String, String> heroSettings = new ConcurrentHashMap<>();
 
@@ -435,19 +440,17 @@ public class AdminService {
     }
 
     private File resolveFile(String path) {
-        File direct = new File(path);
-        if (direct.exists()) {
-            return direct;
+        if (!StringUtils.hasText(path)) {
+            return null;
         }
 
-        String normalized = path.replace("\\", File.separator).replace("/", File.separator);
-        File normalizedFile = new File(normalized);
-        if (normalizedFile.exists()) {
-            return normalizedFile;
-        }
+        Path uploadBasePath = getUploadBasePath();
+        Path resolvedPath = resolveUploadPath(path, uploadBasePath);
 
-        String trimmed = path.replaceFirst("^[\\\\/]+", "");
-        return new File(System.getProperty("user.dir") + File.separator + trimmed);
+        if (resolvedPath == null || !isAllowedUploadPath(resolvedPath, uploadBasePath)) {
+            return null;
+        }
+        return resolvedPath.toFile();
     }
 
     private String getExtension(String fileName) {
@@ -459,6 +462,52 @@ public class AdminService {
             return "";
         }
         return fileName.substring(dot + 1).toLowerCase();
+    }
+
+    private Path getUploadBasePath() {
+        Path configured = Paths.get(uploadBaseDir);
+        if (!configured.isAbsolute()) {
+            configured = Paths.get(System.getProperty("user.dir")).resolve(configured);
+        }
+        return configured.toAbsolutePath().normalize();
+    }
+
+    private Path resolveUploadPath(String rawPath, Path uploadBasePath) {
+        String normalized = rawPath.replace("\\", "/").trim();
+        if (!StringUtils.hasText(normalized)) {
+            return null;
+        }
+
+        if (normalized.startsWith("/uploads/") || normalized.startsWith("uploads/")) {
+            String relative = normalized.replaceFirst("^/?uploads/", "");
+            return uploadBasePath.resolve(relative).normalize();
+        }
+
+        Path requested = Paths.get(rawPath);
+        if (requested.isAbsolute()) {
+            return requested.toAbsolutePath().normalize();
+        }
+
+        return uploadBasePath.resolve(requested).normalize();
+    }
+
+    private boolean isAllowedUploadPath(Path resolvedPath, Path uploadBasePath) {
+        if (resolvedPath.startsWith(uploadBasePath)) {
+            return true;
+        }
+
+        Path currentUploadsBase = Paths.get(System.getProperty("user.dir"), "uploads").toAbsolutePath().normalize();
+        if (resolvedPath.startsWith(currentUploadsBase)) {
+            return true;
+        }
+
+        Path userDir = Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize();
+        if (userDir.getParent() != null) {
+            Path parentUploadsBase = userDir.getParent().resolve("uploads").toAbsolutePath().normalize();
+            return resolvedPath.startsWith(parentUploadsBase);
+        }
+
+        return false;
     }
 
     private AdminMemberResponse toAdminMemberResponse(Member member) {

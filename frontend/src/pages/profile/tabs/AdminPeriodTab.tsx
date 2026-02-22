@@ -155,6 +155,43 @@ export const AdminPeriodTab = () => {
     }
   };
 
+  const getFilenameFromDisposition = (contentDisposition?: string, fallback = "downloaded-file") => {
+    if (!contentDisposition) return fallback;
+
+    const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utf8Match?.[1]) return decodeURIComponent(utf8Match[1]);
+
+    const plainMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+    if (plainMatch?.[1]) return plainMatch[1];
+
+    return fallback;
+  };
+
+  const handleDownload = async (path: string) => {
+    if (!path) return;
+    try {
+      const response = await api.get("/assembly/download", {
+        params: { path },
+        responseType: "blob"
+      });
+
+      const fallbackName = path.split(/[\\/]/).pop() || "downloaded-file";
+      const filename = getFilenameFromDisposition(response.headers["content-disposition"], fallbackName);
+
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      console.error("File download failed:", e);
+      alert("파일 다운로드 중 오류가 발생했습니다.");
+    }
+  };
+
   const renderSemester = (semesterNum: 1 | 2) => {
     const semesterPeriods = periods.filter(p => p.semester === semesterNum);
     return (
@@ -408,26 +445,24 @@ export const AdminPeriodTab = () => {
                         <div className="flex items-center gap-2 mt-4 md:mt-0 w-full md:w-auto justify-end">
                           {/* ✨ 경로 매핑 오류 방지: 슬래시(/) 중복 제거 로직 반영 */}
                           {member.presentationPath && (downloadType === "all" || downloadType === "ppt") && (
-                            <a
-                              href={`http://localhost:8080/${member.presentationPath.startsWith('/') ? member.presentationPath.substring(1) : member.presentationPath}`}
-                              target="_blank"
-                              rel="noreferrer"
+                            <button
+                              type="button"
+                              onClick={() => handleDownload(member.presentationPath)}
                               className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors"
                               title="발표자료 다운로드"
                             >
                               <FileArchive size={16} />
-                            </a>
+                            </button>
                           )}
                           {member.pdfPath && (downloadType === "all" || downloadType === "pdf") && (
-                            <a
-                              href={`http://localhost:8080/${member.pdfPath.startsWith('/') ? member.pdfPath.substring(1) : member.pdfPath}`}
-                              target="_blank"
-                              rel="noreferrer"
+                            <button
+                              type="button"
+                              onClick={() => handleDownload(member.pdfPath)}
                               className="p-2.5 bg-pink-50 text-pink-600 rounded-xl hover:bg-pink-100 transition-colors"
                               title="PDF 다운로드"
                             >
                               <FileText size={16} />
-                            </a>
+                            </button>
                           )}
                           <div className="w-px h-6 bg-slate-100 mx-2" />
                           <p className="text-xs font-bold text-slate-600 max-w-[150px] truncate italic">

@@ -12,6 +12,7 @@ import kr.co.devsign.devsign_backend.dto.assembly.MySubmissionsResponse;
 import kr.co.devsign.devsign_backend.dto.assembly.SaveProjectTitleRequest;
 import kr.co.devsign.devsign_backend.dto.assembly.SubmitFilesCommand;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -43,6 +44,8 @@ public class AssemblyService {
     private final AssemblyPeriodRepository periodRepository;
     private final AssemblyReportRepository reportRepository;
     private final AssemblyProjectRepository projectRepository;
+    @Value("${app.upload.base-dir:uploads}")
+    private String uploadBaseDir;
 
     public List<SubmissionPeriodResponse> getSubmissionPeriods(int year) {
         List<AssemblyPeriod> savedPeriods = periodRepository.findByYearOrderByMonthAsc(year);
@@ -163,30 +166,33 @@ public class AssemblyService {
 
         validateUploadFiles(presentation, pdf, other, report);
 
-        String uploadBase = System.getProperty("user.dir") + File.separator + "uploads";
-        String userPath = uploadBase + File.separator + loginId + File.separator + month;
-
-        File folder = new File(userPath);
-        if (!folder.exists()) {
-            folder.mkdirs();
-        }
+        Path uploadBasePath = getUploadBasePath();
+        Path userPath = uploadBasePath.resolve(loginId).resolve(String.valueOf(month)).normalize();
+        validateWithinBase(userPath, uploadBasePath);
+        Files.createDirectories(userPath);
 
         if (presentation != null && !presentation.isEmpty()) {
-            String fileName = "pres_" + presentation.getOriginalFilename();
-            presentation.transferTo(new File(userPath + File.separator + fileName));
-            report.setPresentationPath(userPath + File.separator + fileName);
+            String fileName = buildStorageFileName("pres_", presentation);
+            Path targetPath = userPath.resolve(fileName).normalize();
+            validateWithinBase(targetPath, uploadBasePath);
+            presentation.transferTo(targetPath.toFile());
+            report.setPresentationPath(toStoredPath(uploadBasePath, targetPath));
         }
 
         if (pdf != null && !pdf.isEmpty()) {
-            String fileName = "pdf_" + pdf.getOriginalFilename();
-            pdf.transferTo(new File(userPath + File.separator + fileName));
-            report.setPdfPath(userPath + File.separator + fileName);
+            String fileName = buildStorageFileName("pdf_", pdf);
+            Path targetPath = userPath.resolve(fileName).normalize();
+            validateWithinBase(targetPath, uploadBasePath);
+            pdf.transferTo(targetPath.toFile());
+            report.setPdfPath(toStoredPath(uploadBasePath, targetPath));
         }
 
         if (other != null && !other.isEmpty()) {
-            String fileName = "other_" + other.getOriginalFilename();
-            other.transferTo(new File(userPath + File.separator + fileName));
-            report.setOtherPath(userPath + File.separator + fileName);
+            String fileName = buildStorageFileName("other_", other);
+            Path targetPath = userPath.resolve(fileName).normalize();
+            validateWithinBase(targetPath, uploadBasePath);
+            other.transferTo(targetPath.toFile());
+            report.setOtherPath(toStoredPath(uploadBasePath, targetPath));
         }
 
         report.setMemo(memo);
@@ -199,34 +205,14 @@ public class AssemblyService {
 
     public ResponseEntity<byte[]> downloadFile(String path) {
         try {
-            Path currentUploadsBase = Paths.get(System.getProperty("user.dir"), "uploads")
-                    .toAbsolutePath()
-                    .normalize();
-            Path parentUploadsBase = null;
-            Path userDir = Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize();
-            if (userDir.getParent() != null) {
-                parentUploadsBase = userDir.getParent().resolve("uploads").toAbsolutePath().normalize();
+            if (!StringUtils.hasText(path)) {
+                return ResponseEntity.badRequest().body(new byte[0]);
             }
 
-            String normalizedInput = path.replace("\\", "/");
-            Path resolvedPath;
+            Path uploadBasePath = getUploadBasePath();
+            Path resolvedPath = resolveUploadPath(path, uploadBasePath);
 
-            // "/uploads/..." 또는 "uploads/..." 형태도 uploads 하위 경로로 해석
-            if (normalizedInput.startsWith("/uploads/") || normalizedInput.startsWith("uploads/")) {
-                String relative = normalizedInput.replaceFirst("^/?uploads/", "");
-                resolvedPath = currentUploadsBase.resolve(relative).normalize();
-            } else {
-                Path requestedPath = Paths.get(path);
-                resolvedPath = requestedPath.isAbsolute()
-                        ? requestedPath.toAbsolutePath().normalize()
-                        : currentUploadsBase.resolve(requestedPath).normalize();
-            }
-
-            // uploads 디렉터리 외부 파일 접근 차단
-            boolean allowed = resolvedPath.startsWith(currentUploadsBase)
-                    || (parentUploadsBase != null && resolvedPath.startsWith(parentUploadsBase));
-
-            if (!allowed) {
+            if (resolvedPath == null || !isAllowedUploadPath(resolvedPath, uploadBasePath)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new byte[0]);
             }
 
@@ -332,5 +318,70 @@ public class AssemblyService {
                 report.getPdfPath(),
                 report.getOtherPath()
         );
+    }
+
+    private Path getUploadBasePath() {
+        Path configured = Paths.get(uploadBaseDir);
+        if (!configured.isAbsolute()) {
+            configured = Paths.get(System.getProperty("user.dir")).resolve(configured);
+        }
+        return configured.toAbsolutePath().normalize();
+    }
+
+    private String buildStorageFileName(String prefix, MultipartFile file) {
+        String original = StringUtils.cleanPath(file.getOriginalFilename() == null ? "" : file.getOriginalFilename());
+        String fileName = Paths.get(original).getFileName().toString();
+        if (!StringUtils.hasText(fileName)) {
+            fileName = "file";
+        }
+        return prefix + fileName;
+    }
+
+    private String toStoredPath(Path uploadBasePath, Path targetPath) {
+        return uploadBasePath.relativize(targetPath).toString().replace(File.separatorChar, '/');
+    }
+
+    private void validateWithinBase(Path targetPath, Path basePath) {
+        if (!targetPath.startsWith(basePath)) {
+            throw new IllegalArgumentException("invalid upload path");
+        }
+    }
+
+    private Path resolveUploadPath(String rawPath, Path uploadBasePath) {
+        String normalized = rawPath.replace("\\", "/").trim();
+        if (!StringUtils.hasText(normalized)) {
+            return null;
+        }
+
+        if (normalized.startsWith("/uploads/") || normalized.startsWith("uploads/")) {
+            String relative = normalized.replaceFirst("^/?uploads/", "");
+            return uploadBasePath.resolve(relative).normalize();
+        }
+
+        Path requested = Paths.get(rawPath);
+        if (requested.isAbsolute()) {
+            return requested.toAbsolutePath().normalize();
+        }
+
+        return uploadBasePath.resolve(requested).normalize();
+    }
+
+    private boolean isAllowedUploadPath(Path resolvedPath, Path uploadBasePath) {
+        if (resolvedPath.startsWith(uploadBasePath)) {
+            return true;
+        }
+
+        Path currentUploadsBase = Paths.get(System.getProperty("user.dir"), "uploads").toAbsolutePath().normalize();
+        if (resolvedPath.startsWith(currentUploadsBase)) {
+            return true;
+        }
+
+        Path userDir = Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize();
+        if (userDir.getParent() != null) {
+            Path parentUploadsBase = userDir.getParent().resolve("uploads").toAbsolutePath().normalize();
+            return resolvedPath.startsWith(parentUploadsBase);
+        }
+
+        return false;
     }
 }
