@@ -236,59 +236,60 @@ python discordBot.py
 ## Directory Structure
 
 ```text
-Devsign_Backend/
-├─ .idea/
-├─ devsign-backend/
-│  ├─ src/
-│  │  ├─ main/
-│  │  │  ├─ java/kr/co/devsign/devsign_backend/
-│  │  │  │  ├─ config/
-│  │  │  │  ├─ controller/
-│  │  │  │  ├─ dto/
-│  │  │  │  │  ├─ admin/
-│  │  │  │  │  ├─ assembly/
-│  │  │  │  │  ├─ board/
-│  │  │  │  │  ├─ common/
-│  │  │  │  │  ├─ event/
-│  │  │  │  │  ├─ member/
-│  │  │  │  │  └─ notice/
-│  │  │  │  ├─ entity/
-│  │  │  │  ├─ repository/
-│  │  │  │  ├─ service/
-│  │  │  │  └─ util/
-│  │  │  └─ resources/
+Devsign_Backend/                                 # 프로젝트 루트
+├─ .idea/                                        # IntelliJ IDE 설정 파일
+├─ devsign-backend/                              # Spring Boot 백엔드 프로젝트
+│  ├─ src/                                       # 백엔드 소스 루트
+│  │  ├─ main/                                   # 애플리케이션 실행 코드
+│  │  │  ├─ java/kr/co/devsign/devsign_backend/  # 백엔드 Java 패키지 루트
+│  │  │  │  ├─ config/                           # 보안/JWT/CORS 등 설정
+│  │  │  │  ├─ controller/                       # REST API 컨트롤러
+│  │  │  │  ├─ dto/                              # 요청/응답 DTO 모음
+│  │  │  │  │  ├─ admin/                         # 관리자 기능 DTO
+│  │  │  │  │  ├─ assembly/                      # 발표자료 제출 기능 DTO
+│  │  │  │  │  ├─ board/                         # 게시판 기능 DTO
+│  │  │  │  │  ├─ common/                        # 공통 응답/DTO
+│  │  │  │  │  ├─ event/                         # 행사 기능 DTO
+│  │  │  │  │  ├─ member/                        # 회원 기능 DTO
+│  │  │  │  │  └─ notice/                        # 공지 기능 DTO
+│  │  │  │  ├─ entity/                           # JPA 엔티티
+│  │  │  │  ├─ repository/                       # DB 접근 레이어
+│  │  │  │  ├─ service/                          # 비즈니스 로직
+│  │  │  │  └─ util/                             # 공통 유틸리티
+│  │  │  └─ resources/                           # 설정/리소스 파일
 │  │  │     └─ application.properties
-│  │  └─ test/
-│  ├─ gradle/
+│  │  └─ test/                                   # 테스트 코드
+│  ├─ gradle/                                    # Gradle Wrapper 관련 파일
 │  ├─ build.gradle
 │  ├─ settings.gradle
 │  ├─ Dockerfile
 │  ├─ gradlew
 │  └─ gradlew.bat
-├─ discord-bot/
+├─ discord-bot/                                  # 디스코드 인증/로그 보조 서버
 │  └─ discordBot.py
-├─ frontend/
-│  ├─ src/
-│  │  ├─ api/
-│  │  ├─ assets/
-│  │  ├─ components/
-│  │  │  ├─ layout/
-│  │  │  └─ ui/
-│  │  ├─ hooks/
-│  │  ├─ pages/
-│  │  │  ├─ admin/
-│  │  │  ├─ assembly/
-│  │  │  ├─ auth/
-│  │  │  ├─ board/
-│  │  │  ├─ event/
-│  │  │  ├─ home/
-│  │  │  ├─ notice/
-│  │  │  └─ profile/
-│  │  ├─ store/
-│  │  └─ utils/
+├─ frontend/                                     # React 프론트엔드 프로젝트
+│  ├─ src/                                       # 프론트 소스 루트
+│  │  ├─ api/                                    # API 클라이언트(axios) 설정
+│  │  ├─ assets/                                 # 정적 리소스
+│  │  ├─ components/                             # 공통 컴포넌트
+│  │  │  ├─ layout/                              # 레이아웃 컴포넌트
+│  │  │  └─ ui/                                  # 공용 UI 컴포넌트
+│  │  ├─ hooks/                                  # 커스텀 훅
+│  │  ├─ pages/                                  # 페이지(라우트) 단위 화면
+│  │  │  ├─ admin/                               # 관리자 페이지
+│  │  │  ├─ assembly/                            # 발표자료 제출 페이지
+│  │  │  ├─ auth/                                # 로그인/회원가입 페이지
+│  │  │  ├─ board/                               # 게시판 페이지
+│  │  │  ├─ event/                               # 행사 페이지
+│  │  │  ├─ home/                                # 홈 페이지
+│  │  │  ├─ notice/                              # 공지 페이지
+│  │  │  └─ profile/                             # 마이페이지/프로필
+│  │  ├─ store/                                  # 전역 상태 관리
+│  │  └─ utils/                                  # 공통 유틸 함수
 │  ├─ .env
 │  ├─ .env.production
 │  └─ Dockerfile
+├─ uploads/                                      # 업로드 파일 저장 디렉토리
 ├─ Caddyfile
 ├─ docker-compose.yml
 └─ README.md
@@ -296,4 +297,4 @@ Devsign_Backend/
 
 ### Notes
 
-- 업로드 파일은 `APP_UPLOAD_BASE_DIR` 설정값 기준 경로에 저장됩니다.
+- 업로드 파일은 `APP_UPLOAD_BASE_DIR` 설정값 기준 경로에 저장됩니다. (현재는 uploads 폴더 안에 저장됨)
